@@ -16,11 +16,17 @@ Camera::Camera(DatasetType mode, int fps):_mode(mode), _fps(fps){
     
     switch(_mode){
         case TKACH: //QVGA
-            _width = 320;
-            _height = 240;
-            _focal_length_x = 287.26;
-            _focal_length_y = 287.26;
-            _zFar = 1000;
+			_width = 320;
+			_height = 240;
+			_focal_length_x = 224.502;
+			_focal_length_y = 230.494;
+			_zFar = 1000;  //500
+			_zNear = 100;
+//            _width = 320;
+//            _height = 240;
+//            _focal_length_x = 287.26;
+//            _focal_length_y = 287.26;
+//            _zFar = 1000;
             break;
         case TOMPSON:
             _width = 640/2;
@@ -64,6 +70,13 @@ Camera::Camera(DatasetType mode, int fps):_mode(mode), _fps(fps){
 			_height = 480;
 			_focal_length_x = 525.5;
 			_focal_length_y = 525.5;
+			break;
+		case BRANDON: //QVGA
+			_width = 320;
+			_height = 240;
+			_focal_length_x = 287.26;
+			_focal_length_y = 287.26;
+			_zFar = 1000;
 			break;
         default: 
             printf("!!!FATAL: Invalid Camera"); 

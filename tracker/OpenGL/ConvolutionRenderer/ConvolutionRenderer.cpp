@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <Eigen/Dense>
 #include <GL/glew.h> 
-#include <OpenGP/GL/EigenOpenGLSupport3.h>
+//#include <OpenGP/GL/EigenOpenGLSupport3.h>
 #include <QGLBuffer>
 #include <QGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
@@ -98,8 +98,9 @@ void create_smooth_thumb_fold_and_realistic_thumb_top(Model * model, std::vector
 		glm::vec3 u = c2 - c1; glm::vec3 v = p - c1;
 		float alpha = dot(u, v) / dot(u, u);
 		if (alpha <= 0) return c1;
-		if (alpha > 0 && alpha < 1) return c1 + alpha * u;
 		if (alpha >= 1) return c2;
+		const glm::vec3 dummy = c1 + alpha * u;
+		if (alpha > 0 && alpha < 1) return dummy;
 	};
 
 	/// Shift palm-fold center

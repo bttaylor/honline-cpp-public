@@ -118,7 +118,8 @@ enum DatasetType {
 	SRIDHAR = 3,
 	CHEN = 4,
 	INTEL = 5,
-	VGA = 6
+	VGA = 6,
+	BRANDON = 7
 }; 
 
 enum Mode {

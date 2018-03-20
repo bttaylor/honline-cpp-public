@@ -1,15 +1,15 @@
 # TODO: use the find_file macro
 
 if(WIN32)
-    set(REALSENSE_INCLUDE_DIR "C:/Developer/RealSense/r6/RSSDK/include")
-    set(REALSENSE_UTILITY_DIR "C:/Developer/RealSense/r6/RSSDK/sample/common/include")
+    set(REALSENSE_INCLUDE_DIR "C:/Program Files (x86)/Intel/RSSDK/include")
+    set(REALSENSE_UTILITY_DIR "C:/Program Files (x86)/Intel/RSSDK/sample/core/common/include")
 
     if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-        set(REALSENSE_LIBRARY "C:/Developer/RealSense/r6/RSSDK/lib/x64/libpxcmd_d.lib")
+        set(REALSENSE_LIBRARY "C:/Program Files (x86)/Intel/RSSDK/lib/x64/libpxcmd_d.lib")
       endif()
 
     if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
-        set(REALSENSE_LIBRARY "C:/Developer/RealSense/r6/RSSDK/lib/x64/libpxcmd.lib")
+        set(REALSENSE_LIBRARY "C:/Program Files (x86)/Intel/RSSDK/lib/x64/libpxcmd.lib")
     endif()
 
 

@@ -1,4 +1,4 @@
-#include "nanoflann/nanoflann.hpp"
+#include "nanoflann.hpp"
 
 #include "opencv2/core/core.hpp"       
 #include "opencv2/highgui/highgui.hpp" 

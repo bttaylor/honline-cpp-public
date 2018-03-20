@@ -12,7 +12,7 @@ FIND_PATH(ANTTWEAKBAR_INCLUDE_DIR AntTweakBar.h PATHS
     #--- External folder
     ${CMAKE_CURRENT_LIST_DIR}/../external/AntTweakBar/include/
     #--- Windows
-    C:/Developer/include/AntTweakBar
+    C:/Developer/AntTweakBar/include
     #--- Mac
     /usr/local/include
     /usr/X11/include
@@ -27,7 +27,7 @@ endif()
 FIND_LIBRARY( ANTTWEAKBAR_LIBRARY AntTweakBar${BITS} PATHS
     $ENV{ANTTWEAKBAR_ROOT}/lib
     #--- Windows
-    C:/Developer/lib
+    C:/Developer/AntTweakBar/lib
     #---
     /usr/local
     /usr/X11

@@ -1,5 +1,5 @@
 if(WIN32)
-set(EIGEN3_INCLUDE_DIRS "C:/Developer/include")
+set(EIGEN3_INCLUDE_DIRS "C:/Developer/eigen-eigen-67e894c6cd8f")
 else()
 FIND_PATH( EIGEN3_INCLUDE_DIRS Eigen/Geometry
     $ENV{EIGEN3DIR}/include

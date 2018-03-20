@@ -172,7 +172,9 @@ Worker::~Worker() {
 bool Worker::track_till_convergence() {	
 	for (int i = 0; i < settings->termination_max_iters; ++i) {
 		track(i);
+		//cout << i << " ";
 	}	
+	//cout << endl;
 	return monitor.is_failure_frame(tracking_error.pull_error, tracking_error.push_error, settings->dataset_type);
 }
 
@@ -186,10 +188,12 @@ void Worker::track(int iter) {
 	else beta = std::vector<float>();
 
 	model->serializer.serialize_model();
+	//cout << "a ";
 
 	if (E_fitting.settings->fit2D_silhouette_enable == true)
 		offscreen_renderer.render_offscreen(iter == settings->termination_max_iters - 1, false, false);
 
+	//cout << "b ";
 	if (settings->verify_jacobian) {
 		jacobian_verifier->theta_double = std::vector<double>(theta.begin(), theta.end());
 		jacobian_verifier->beta_double = std::vector<double>(beta.begin(), beta.end());
@@ -202,6 +206,7 @@ void Worker::track(int iter) {
 
 	E_fitting.track(current_frame, system, rigid_only, eval_error, settings->calibrate, tracking_error.push_error, tracking_error.pull_error, tracking_error.weighted_error, iter); 
 
+	//cout << "c ";
 	if (system.has_nan()) write_linear_system(system, iter, current_frame.id, "fitting", settings->logs_path);
 
 	if (settings->run_kalman_filter && iter == settings->termination_max_iters - 1) {
@@ -215,6 +220,7 @@ void Worker::track(int iter) {
 	E_fingertips.track(system, current_frame);	
 	E_damping.track(system);
 
+	//cout << "d ";
 	if (rigid_only) {
 		energy::Energy::rigid_only(system);
 	}
@@ -224,6 +230,7 @@ void Worker::track(int iter) {
 		E_shape.track(system, beta, iter);		
 	}
 
+	//cout << "e ";
 	if (settings->run_kalman_filter && (settings->kalman_filter_type == EXTENDED || settings->kalman_filter_type == HYBRID) && settings->calibrate) {
 		if (current_frame.id > 2 * settings->frames_interval_between_measurements) kalman_filter->track(system, beta);
 	}
@@ -238,7 +245,8 @@ void Worker::track(int iter) {
 	}
 
 	write_metrics_and_solutions();
-	
+
+	//cout << "f ";
 	///  Update
 	if (settings->calibrate && !rigid_only) {
 		model->update_beta(solution);
@@ -251,6 +259,7 @@ void Worker::track(int iter) {
 	model->compute_outline();
 	E_temporal.update(current_frame.id, theta);
 
+	//cout << "g ";
 	/// > Make a measurement
 	if (iter != settings->termination_max_iters - 1) return;	
 	if (current_frame.id % settings->frames_interval_between_measurements != 0) return;

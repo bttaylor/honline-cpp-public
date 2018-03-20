@@ -18,7 +18,7 @@ elseif(DEFINED ENV{QT5_CMAKE_DIR})
 else()
     # Otherwise just resort to some built-in stuff
     if(WIN32)
-        set(CMAKE_PREFIX_PATH "C:/Developer/Qt/5.4/msvc2013_64_opengl/lib/cmake")
+        set(CMAKE_PREFIX_PATH "C:/Qt/5.4/msvc2013_64_opengl/lib/cmake")
     elseif(APPLE)
         set(CMAKE_PREFIX_PATH "/usr/local/Cellar/qt5/5.4.1/lib/cmake")
     elseif(UNIX)

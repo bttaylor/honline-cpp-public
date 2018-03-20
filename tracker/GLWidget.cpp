@@ -47,8 +47,11 @@ QGLWidget(OpenGL32Format()),
 }
 
 GLWidget::~GLWidget() {
+	std::cout << "~GLWidget() Called" << std::endl;
 	worker->cleanup_graphic_resources();
+	std::cout << "Past worker->cleanup_graphic_resources();" << std::endl;
 	tw_settings->tw_cleanup();
+	std::cout << "Past tw_settings->tw_cleanup();" << std::endl;
 }
 
 std::vector<std::pair<Vector3, Vector3>> GLWidget::prepare_data_correspondences_for_degub_renderer() {
@@ -152,7 +155,7 @@ void GLWidget::paintGL() {
 
 		// fabrice - 400, // timur - 599 // pier2 - 599 // jan2 - 1199 // edoardo4 - 599 // filippe - 599 // matthieu2 - 1359 // jacomo3 - 599 // madeleine2 - 599 // stefano2 - 599 // anastasia - 519 // isinsu - 599
 		// mina - 599 // andrii5 - 399 // luca 859 // alexis3 - 1339
-		int last_calibration_frame = 599;
+		int last_calibration_frame = 1500; //599
 		if (convolution_renderer.num_frames_since_calibrated == 0 || (worker->current_frame.id == last_calibration_frame || worker->current_frame.id == last_calibration_frame + 1 && convolution_renderer.num_frames_since_calibrated < 0)) {
 			cout << "CALIBRATED: " << worker->current_frame.id << endl;
 			convolution_renderer.num_frames_since_calibrated = 0;
@@ -160,7 +163,8 @@ void GLWidget::paintGL() {
 			{ /// Write calibrated model to file
 				std::vector<float> theta = worker->model->get_theta();
 				worker->model->set_initial_pose();
-				worker->model->write_model(sequence_path);
+				worker->model->write_model(worker->settings->calibrated_model_path);
+				//worker->model->write_model(sequence_path);
 				worker->model->update_theta(theta); worker->model->update_centers();
 			}
 

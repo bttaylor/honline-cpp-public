@@ -10,6 +10,7 @@ FIND_PATH( GLEW_INCLUDE_DIRS GL/glew.h
     /opt/include 
     # FOR WINDOWS
     C:/Developer/include
+    C:/Developer/GLEW/glew-2.0.0/include
     ${CMAKE_SOURCE_DIR}/external/glew/include)
 
 if(WIN32)
@@ -33,6 +34,7 @@ FIND_LIBRARY( GLEW_LIBRARIES NAMES ${GLEWLIBNAME} PATHS
     # FOR UBUNTU 12.04 LTS
     /usr/lib/x86_64-linux-gnu    
     # FOR WINDOWS 
+    C:/Developer/GLEW/glew-2.0.0/lib/Release/x64
     C:/Developer/lib
     ${CMAKE_SOURCE_DIR}/external/glew/lib)
 

@@ -14,7 +14,6 @@
 #include <random>
 
 Model::Model() :outline_finder(this), serializer(this), semantics(this) {
-
 }
 
 Model::~Model() {

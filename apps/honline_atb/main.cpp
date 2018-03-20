@@ -87,15 +87,24 @@ int main(int argc, char* argv[]) {
 	bool benchmark, playback, real_color;
 	Worker worker;
 
-	worker.settings->sequence_path = "C:/Data/sensor-sequences/";
-	worker.settings->data_path = "C:/Developer/honline-cpp/data/";
-	worker.settings->calibrated_model_path = "C:/Data/honline-results/calibrated-models/experiments/";
-	worker.settings->sequence_name = "experiment/";
-	worker.settings->logs_path = "C:/Users/tkach/Desktop/Test/";
+	worker.settings->sequence_path = "C:/Projects/Data/Participant9/";
+	worker.settings->data_path = "C:/Projects/honline/honline-cpp-public/data/";
+	worker.settings->calibrated_model_path = "C:/Data/ModelFits/P09/";
+	worker.settings->sequence_name = "Set1/"; // "PalmOutFingersUp/"; // "experiment/";
+	worker.settings->logs_path = "C:/Projects/honline/";
+
+	if (argc > 1){
+		cout << "argv[1]: " << argv[1] << endl;
+		std::string pnum(argv[1]);
+		worker.settings->sequence_path = "C:/Projects/Data/Expert" + pnum + "/";
+		worker.settings->calibrated_model_path = "C:/Data/ModelFits/E" + std::string(2 - pnum.length(), '0') + pnum + "/";
+		cout << "sequence_path: " << worker.settings->sequence_path << endl;
+		cout << "calibrated_model_path: " << worker.settings->calibrated_model_path << endl;
+	}
 
 	/// Algorithm 		
 	{
-		benchmark = false;
+		benchmark = true;
 		playback = false;
 		real_color = false;
 		worker.settings->model_path = "";
@@ -110,7 +119,7 @@ int main(int argc, char* argv[]) {
 		worker.settings->fit_wrist_separately = true;
 		worker.settings->random_seed = 5001;
 		// std::chrono::system_clock::now().time_since_epoch().count() % RAND_MAX;
-		worker.settings->dataset_type = TKACH;
+		worker.settings->dataset_type = TKACH;  //TKACH
 		worker.settings->calibration_type = FULL;
 	}
 	/// Estimations 
@@ -186,30 +195,30 @@ int main(int argc, char* argv[]) {
 	}
 
 	{ /// If the application is run externaly
-		if (argc > 1) {
+		/*if (argc > 1) {
 			parse_command_line(argc, argv, worker);
 			worker.settings->run_experiments = false;
 			//worker.settings->sequence_length = 300;
 			benchmark = true;
-		}
+		}*/
 
 		if (worker.settings->dataset_type == TOMPSON || worker.settings->dataset_type == SHARP) worker.settings->downsampling_factor = 1;
 		if (worker.settings->calibration_type == NONE) 	worker.E_fitting.settings->fit2D_weight = 0.4;
-		if (worker.settings->calibration_type == NONE && worker.settings->dataset_type == TKACH) worker.E_fingertips._settings.enable_fingertips_prior = false;
+		if (worker.settings->calibration_type == NONE && (worker.settings->dataset_type == TKACH || worker.settings->dataset_type == BRANDON)) worker.E_fingertips._settings.enable_fingertips_prior = false;
 		else worker.E_fitting.settings->fit2D_weight = 1.5;
 		if (worker.settings->sequence_name.compare("teaser_short/") == 0 && worker.settings->calibration_type == NONE) {
 			worker.settings->termination_max_iters = 8;
 		}
 		if (worker.settings->dataset_type == SHARP) worker.E_fitting.settings->undistort = true;
 		if (worker.settings->fit_wrist_separately) worker.E_fitting.settings->fit_wrist_separately = true;
-		if (worker.settings->dataset_type != TKACH) worker.E_fitting.settings->dataset_type = worker.settings->dataset_type;
+		if (!(worker.settings->dataset_type == TKACH || worker.settings->dataset_type == BRANDON)) worker.E_fitting.settings->dataset_type = worker.settings->dataset_type;
 
 		worker.E_temporal._settings.temporal_coherence1_enable = true;
 		worker.E_temporal._settings.temporal_coherence2_enable = true;
-		if (worker.settings->dataset_type == TKACH && worker.settings->calibration_type == NONE) {
+		if ((worker.settings->dataset_type == TKACH || worker.settings->dataset_type == BRANDON) && worker.settings->calibration_type == NONE) {
 			worker.E_temporal._settings.temporal_coherence1_weight = 0.05f; worker.E_temporal._settings.temporal_coherence2_weight = 0.05f;
 		}
-		if (worker.settings->dataset_type == TKACH && worker.settings->calibration_type == FULL) {
+		if ((worker.settings->dataset_type == TKACH || worker.settings->dataset_type == BRANDON) && worker.settings->calibration_type == FULL) {
 			worker.E_temporal._settings.temporal_coherence1_weight = 0.2f; worker.E_temporal._settings.temporal_coherence2_weight = 0.2f;
 		}
 		if (worker.settings->dataset_type == TOMPSON) {
@@ -235,8 +244,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	Q_INIT_RESOURCE(shaders);
-	QApplication app(argc, argv);
-
+	QApplication app(argc, argv);	
 	Camera camera(worker.settings->dataset_type, 60);
 	SensorRealSense sensor(&camera, real_color, worker.settings->downsampling_factor, worker.settings->fit_wrist_separately);
 

@@ -39,7 +39,7 @@ public:
 		unsigned random_seed = 0;
 		float uniform_scaling_mean = 1.0;
 
-		DatasetType dataset_type = TKACH;
+		DatasetType dataset_type = TKACH; // BRANDON; // TKACH;
 		CalibrationType calibration_type = NONE;
 		CalibrationStage calibration_stage = DEFAULT;
 		

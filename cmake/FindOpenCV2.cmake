@@ -23,7 +23,7 @@
 find_path(OpenCV2_ROOT_INC_DIR NAMES opencv2/opencv.hpp
     PATHS
         #--- WINDOWS
-        C:/Developer/OpenCV-2.4.10/build/include                # Windows
+        C:/Developer/opencv/build/include                # Windows
         "$ENV{OpenCV_ROOT_DIR}/include"     # *NIX: custom install
         /usr/local/include                  # Linux: default dir by CMake
         /usr/include                        # Linux
@@ -61,16 +61,18 @@ set(OpenCV2_INCLUDE_DIRS
 #message(STATUS "OPENCV2_LIBRARY_SEARCH_PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS}")
 list(APPEND OPENCV2_LIBRARY_SEARCH_PATHS $ENV{OpenCV_ROOT_DIR})
 list(APPEND OPENCV2_LIBRARY_SEARCH_PATHS "C:/Developer/OpenCV-2.4.10/build/x64/vc12/lib")
+list(APPEND OPENCV2_LIBRARY_SEARCH_PATHS "C:/Developer/opencv/build/x64/vc14/lib")
+list(APPEND OPENCV2_LIBRARY_SEARCH_PATHS "C:/Developer/opencv/build/x64/vc14/bin")
 list(APPEND OPENCV2_LIBRARY_SEARCH_PATHS "/usr/local/lib")
 list(APPEND OPENCV2_LIBRARY_SEARCH_PATHS "/opt/local/lib")
 list(APPEND OPENCV2_LIBRARY_SEARCH_PATHS "/usr/lib")
 
 
 #--- FIND RELEASE LIBRARIES
-find_library(OpenCV2_CORE_LIBRARY_REL       NAMES opencv_core opencv_core230 opencv_core220 opencv_core2410                         PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
-find_library(OpenCV2_IMGPROC_LIBRARY_REL    NAMES opencv_imgproc opencv_imgproc230 opencv_imgproc220 opencv_imgproc2410             PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
-find_library(OpenCV2_CONTRIB_LIBRARY_REL    NAMES opencv_contrib opencv_contrib230 opencv_contrib220 opencv_contrib2410             PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
-find_library(OpenCV2_HIGHGUI_LIBRARY_REL    NAMES opencv_highgui opencv_highgui230 opencv_highgui220 opencv_highgui2410             PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
+find_library(OpenCV2_CORE_LIBRARY_REL       NAMES opencv_core opencv_core230 opencv_core220 opencv_core2413                         PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
+find_library(OpenCV2_IMGPROC_LIBRARY_REL    NAMES opencv_imgproc opencv_imgproc230 opencv_imgproc220 opencv_imgproc2413             PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
+find_library(OpenCV2_CONTRIB_LIBRARY_REL    NAMES opencv_contrib opencv_contrib230 opencv_contrib220 opencv_contrib2413             PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
+find_library(OpenCV2_HIGHGUI_LIBRARY_REL    NAMES opencv_highgui opencv_highgui230 opencv_highgui220 opencv_highgui2413             PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
 list(APPEND OpenCV2_LIBRARIES_REL ${OpenCV2_CORE_LIBRARY_REL})
 list(APPEND OpenCV2_LIBRARIES_REL ${OpenCV2_IMGPROC_LIBRARY_REL})
 list(APPEND OpenCV2_LIBRARIES_REL ${OpenCV2_CONTRIB_LIBRARY_REL})
@@ -78,10 +80,10 @@ list(APPEND OpenCV2_LIBRARIES_REL ${OpenCV2_HIGHGUI_LIBRARY_REL})
 
 #--- FIND DEBUG LIBRARIES
 if(WIN32)
-    find_library(OpenCV2_CORE_LIBRARY_DEB       NAMES opencv_cored opencv_core230d opencv_core220d opencv_core2410d                     PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
-    find_library(OpenCV2_IMGPROC_LIBRARY_DEB    NAMES opencv_imgprocd opencv_imgproc230d opencv_imgproc220d opencv_imgproc2410d         PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
-    find_library(OpenCV2_CONTRIB_LIBRARY_DEB    NAMES opencv_contribd opencv_contrib230d opencv_contrib220d opencv_contrib2410d         PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
-    find_library(OpenCV2_HIGHGUI_LIBRARY_DEB    NAMES opencv_highguid opencv_highgui230d opencv_highgui220d opencv_highgui2410d         PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
+    find_library(OpenCV2_CORE_LIBRARY_DEB       NAMES opencv_cored opencv_core230d opencv_core220d opencv_core2413d                     PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
+    find_library(OpenCV2_IMGPROC_LIBRARY_DEB    NAMES opencv_imgprocd opencv_imgproc230d opencv_imgproc220d opencv_imgproc2413d         PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
+    find_library(OpenCV2_CONTRIB_LIBRARY_DEB    NAMES opencv_contribd opencv_contrib230d opencv_contrib220d opencv_contrib2413d         PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
+    find_library(OpenCV2_HIGHGUI_LIBRARY_DEB    NAMES opencv_highguid opencv_highgui230d opencv_highgui220d opencv_highgui2413d         PATHS ${OPENCV2_LIBRARY_SEARCH_PATHS})
     list(APPEND OpenCV2_LIBRARIES_DEB ${OpenCV2_CORE_LIBRARY_DEB})
     list(APPEND OpenCV2_LIBRARIES_DEB ${OpenCV2_IMGPROC_LIBRARY_DEB})
     list(APPEND OpenCV2_LIBRARIES_DEB ${OpenCV2_CONTRIB_LIBRARY_DEB})

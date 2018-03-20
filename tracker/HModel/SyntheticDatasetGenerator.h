@@ -23,7 +23,7 @@ class SyntheticDatasetGenerator {
 	float max_theta0 = M_PI / 4;//M_PI/2;
 	float max_theta1 = 2 * M_PI - step_theta;// / M_PI - step_theta;
 	float max_theta2 = M_PI / 4;// M_PI / 2 - step_theta;
-	std::vector<float> theta_global_rotation = { min_theta0, min_theta1, min_theta2 };
+	std::vector<float> theta_global_rotation = std::vector<float>{ min_theta0, min_theta1, min_theta2 };
 	int sequence_length = 2260;
 	string sequence_path;
 	int data_count = 0;

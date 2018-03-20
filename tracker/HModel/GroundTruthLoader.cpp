@@ -20,7 +20,7 @@ GroundTruthLoader::GroundTruthLoader(DatasetType dataset_type, bool fit_wrist_se
 		this->sequence_path = "C:/Data/sensor-sequences/tompson/";
 		this->num_markers = 36;
 	}
-	if (dataset_type == TKACH) {
+	if (dataset_type == TKACH || dataset_type == BRANDON) {
 		this->num_markers = 25;
 	}
 	if (dataset_type == SRIDHAR) {
@@ -191,8 +191,10 @@ void GroundTruthLoader::get_marker_positions_tompson_finger(std::vector<std::str
 		glm::dvec3 v = p - c1;
 		double alpha = dot(u, v) / dot(u, u);
 		if (alpha <= 0) return c1;
-		if (alpha > 0 && alpha < 1) return c1 + alpha * u;
 		if (alpha >= 1) return c2;
+		//if (alpha > 0 && alpha < 1) return c1 + alpha * u;
+		const glm::dvec3 dummy = c1 + alpha * u;
+		if (alpha > 0 && alpha < 1) return dummy;
 	};
 
 	glm::vec3 membrane_center = model->centers[model->centers_name_to_id_map[centers_names[0]]];
@@ -355,7 +357,7 @@ void GroundTruthLoader::get_marker_positions_sridhar(std::vector<Vector3> & mark
 }
 
 void GroundTruthLoader::get_marker_positions(std::vector<Vector3> & marker_positions, std::vector<size_t> & marker_block_indices) {
-	if (dataset_type == TKACH || dataset_type == TOMPSON) {
+	if (dataset_type == TKACH || dataset_type == BRANDON || dataset_type == TOMPSON) {
 		get_marker_positions_tompson(marker_positions, marker_block_indices);
 	}
 	if (dataset_type == SRIDHAR) {

@@ -226,7 +226,7 @@ public:
 	float palm_middle_offset_ratio;
 	float palm_ring_offset_ratio;
 	std::map<size_t, size_t> centerid_to_attachment_id_map;
-	std::vector<float> membranes_fractional_length = { 0.45f, 0.47f, 0.53f, 0.61f };
+	std::vector<float> membranes_fractional_length = std::vector<float>{ 0.45f, 0.47f, 0.53f, 0.61f };
 	///// replace by something more elegant
 
 	std::map<CalibrationType, int> calibration_type_to_num_betas_map;

@@ -68,6 +68,15 @@ public:
 	std::vector<std::vector<float>> certainties_vector;
 	GLWidget * glwidget;
 
+	//Brandon Mods
+	int user_num;
+	std::string word;
+	int word_i = 0;
+	std::vector<std::string> words;
+	bool handshape = true;
+	bool all_sets_done = false;
+	int set_frame = 0;
+
 
 	Tracker(Worker*worker, GLWidget * glwidget, double FPS, std::string sequence_path, bool real_color) : worker(worker), glwidget(glwidget), synthetic_dataset_generator(worker, sequence_path){
 		setSingleShot(false);
@@ -86,10 +95,12 @@ public:
 		if (worker->settings->dataset_type == SRIDHAR) {
 			sequence_length = 3155;
 		}
-		if (worker->settings->dataset_type == TKACH) {
+		if (worker->settings->dataset_type == TKACH || BRANDON) {
 			std::ifstream sequence_length_file(sequence_path + "sequence_length.txt");
 			if (!sequence_length_file.is_open()) {
 				cout << "cannot open sequence length file" << endl;
+				sequence_length = 171 + 292;
+				synthetic_dataset_generator.set_sequence_length(sequence_length);
 			}
 			else {
 				std::string line;
@@ -99,6 +110,8 @@ public:
 				synthetic_dataset_generator.set_sequence_length(sequence_length);
 			}
 		}
+
+		load_prompts_list();
 	}
 
 	void toggle_tracking(bool on) {
@@ -132,6 +145,8 @@ public:
 	int speedup = 1;
 	int start_frame = 0;
 	std::string sharp_sequence_name = "globalSubjectA";
+	std::string current_word = "aberdeen_1_";
+	int frame_setback = 0;
 
 	void print() {
 		//cout << worker->current_frame.id << endl;
@@ -153,16 +168,31 @@ public:
 		//compute_rendered_metrics_for_recorded_rendered_sequence(); return;
 		//compare(); return; //worker->E_pose.explore_pose_space(1); return;
 		//perturb_model_while_tracking();
-
+		//cout << "1" << endl;
 		if (worker->settings->pause_tracking == true) {
+			cout << "Paused" << endl;
 			worker->offscreen_renderer.render_offscreen(true, false, false);
 			worker->updateGL(); return;
 		}
 		if (worker->current_frame.id < 0) { worker->updateGL(); Sleep(1500); worker->current_frame.id = start_frame; }
 
+		//cout << "2" << endl;
+		//Brandon
+		if (set_frame == 2){
+			std::cout << "Increasing termination_max_iters to 150" << std::endl;
+			//worker->ground_truth_loader->enable_ground_truth_reinit = true;
+			worker->settings->termination_max_iters = 150;
+		}
+		if (set_frame == 4) {
+			std::cout << "Decreasing termination_max_iters to 15" << std::endl;
+			//worker->ground_truth_loader->enable_ground_truth_reinit = false;
+			worker->settings->termination_max_iters = 15;
+		}
+
 		reinitialize();
 		print();
 
+		//cout << "3" << endl;
 		static std::clock_t tracking_start_time = std::clock();
 		if (worker->settings->restart_clock) { tracking_start_time = std::clock();  worker->current_frame.id = 0; worker->settings->restart_clock = false; }
 
@@ -175,7 +205,9 @@ public:
 			}
 			if (mode == BENCHMARK) {
 				load_recorded_frame();
+				//cout << "4" << endl;
 				fetch_recorded_depth();
+				//cout << "5" << endl;
 			}
 			sensor_fetching_time = std::clock() - tracking_start_time; if (worker->settings->report_times) std::cout << "fetching = " << sensor_fetching_time - frame_start_time << endl;
 		}
@@ -187,8 +219,10 @@ public:
 				write_solutions_and_tracking_metrics();
 				worker->offscreen_renderer.render_offscreen(true, false, false); worker->updateGL();
 				worker->current_frame.id++;
+				set_frame++;
 				return;
 			}
+			//cout << "6" << endl;
 
 			for (int row = 0; row < worker->handfinder->sensor_silhouette.rows; row++) {
 				for (int col = 0; col < worker->handfinder->sensor_silhouette.cols; col++) {
@@ -199,6 +233,7 @@ public:
 
 			if (worker->E_fitting.settings->fit2D_outline_enable) compute_data_outline();
 
+			//cout << "7" << endl;
 			datastream->add_frame(worker->current_frame.color.data, worker->current_frame.depth.data, worker->model->real_color.data);
 			worker->sensor_depth_texture->load(worker->current_frame.depth.data, worker->current_frame.id);
 
@@ -222,9 +257,11 @@ public:
 
 			}
 
+			//cout << "8" << endl;
 			if (tracking_enabled) {
 				tracking_failed = worker->track_till_convergence();
 			}
+			//cout << "9" << endl;
 			if (initialization_enabled && tracking_failed) {
 				static QianDetection detection(worker);
 				if (detection.can_reinitialize()) {
@@ -267,13 +304,30 @@ public:
 		else if (worker->settings->report_times) std::cout << "average = " << (std::clock() - (tracking_start_time + first_frame_lag)) / worker->current_frame.id << endl;
 
 		if (!worker->settings->pause_current_frame) worker->current_frame.id++;
+		//if (!worker->settings->pause_current_frame) set_frame++;
 
-		if (worker->current_frame.id == sequence_length && mode == BENCHMARK) process_end_of_sequence();
+		if (!handshape)	{
+			if (worker->current_frame.id == sequence_length && mode == BENCHMARK) process_end_of_sequence();
+		}
+		else{
+			set_frame++;
+			if (all_sets_done){
+				worker->model->set_initial_pose();
+				worker->model->write_model(worker->settings->calibrated_model_path + "second/");
+				process_end_of_sequence();
+			}
+		}
 		//write_current_frame();
 	}
 
 	void reinitialize() {
 		std::vector<size_t> reinitialization_frame_ids;
+		if (worker->settings->dataset_type == BRANDON) {
+			//reinitialization_frame_ids = { 1, 424, 939, 1279, 1671, 2112, 2646, 3154 };
+			//reinitialization_frame_ids = { 1, 172 };
+
+
+		}
 		if (worker->settings->dataset_type == SRIDHAR) {
 			//reinitialization_frame_ids = { 1, 424, 939, 1279, 1671, 2112, 2646, 3154 };
 			reinitialization_frame_ids = { 1, 424, 866, 1258, 1773, 2113, 2647,
@@ -288,6 +342,11 @@ public:
 
 		for (size_t i = 0; i < reinitialization_frame_ids.size(); i++) {
 			if (worker->current_frame.id == reinitialization_frame_ids[i]) {
+				if (worker->settings->dataset_type == BRANDON){
+					current_word = "afghanistan_1_";
+					frame_setback += reinitialization_frame_ids[i];
+					std::cout << "Reinitialize at frame: " << worker->current_frame.id << "  Read from: " + sequence_path + current_word + "depth-" + "_______" + ".png" << std::endl;
+				}
 				cout << worker->current_frame.id << endl;
 				worker->ground_truth_loader->enable_ground_truth_reinit = true;
 				worker->settings->termination_max_iters = 150;
@@ -328,7 +387,11 @@ public:
 
 				cout << "writing model" << endl;
 				worker->model->set_initial_pose();
-				worker->model->write_model(worker->model->calibrated_model_path);
+				if (worker->settings->load_calibrated_model)
+					worker->model->write_model(worker->model->calibrated_model_path);  //Doesn't get set if not loaded
+				else
+					worker->model->write_model(worker->settings->calibrated_model_path);
+				
 			}
 		}
 
@@ -345,7 +408,7 @@ public:
 		if (worker->settings->show_iteration_calls) cout << "fetch recorded depth" << endl;
 
 		if (!worker->settings->use_synthetic_depth) {
-			if (worker->settings->dataset_type == TKACH) {
+			if (worker->settings->dataset_type == TKACH || BRANDON) {
 				worker->handfinder->binary_classification(worker->current_frame.depth, worker->current_frame.color);
 			}
 			if (worker->settings->dataset_type == TOMPSON) {
@@ -471,7 +534,7 @@ public:
 		}
 
 		//cv::imshow("sensor_silhouette", worker->handfinder->sensor_silhouette); cv::waitKey(3);
-		if (worker->settings->dataset_type == TKACH && !worker->settings->use_synthetic_depth) {
+		if ((worker->settings->dataset_type == TKACH || worker->settings->dataset_type == BRANDON) && !worker->settings->use_synthetic_depth) {
 			worker->handfinder->binary_classification_wrist(worker->current_frame.depth);
 		}
 
@@ -604,14 +667,65 @@ public:
 
 		std::ostringstream stringstream;
 		if (worker->settings->dataset_type == TKACH) {
+			if (handshape){
+				std::string frame_str = std::string(7 - std::to_string(set_frame).length(), '0') + std::to_string(set_frame);
+				//stringstream << std::setw(7) << std::setfill('0') << set_frame; // (worker->current_frame.id - frame_setback);
+				std::string checkFile = sequence_path + current_word + "/depth-" + frame_str + ".png";
+				//std::cout << "Checking: " << checkFile << endl;
+
+				ifstream ftest(checkFile.c_str());
+				while (ftest.fail() && !all_sets_done){
+					std::cout << "Failed to Load: " << checkFile << endl;
+					std::cout << "word_i: " << word_i << " words.size(): " << words.size() << std::endl;
+					if (word_i >= words.size()){
+						std::cout << "End of all sets " << std::endl;
+						all_sets_done = true;
+					}
+					else{
+						current_word = words[word_i++];						
+						set_frame = 0; 
+						cout << "Next word: " << current_word;
+						//worker->model->set_initial_pose();
+						cout << " model reset to initial pose" << endl;
+						frame_str = std::string(7 - std::to_string(set_frame).length(), '0') + std::to_string(set_frame);
+						stringstream << std::setw(7) << std::setfill('0') << set_frame; // (worker->current_frame.id - frame_setback);
+						checkFile = sequence_path + current_word + "/depth-" + frame_str + ".png";
+						ftest.open(checkFile.c_str());
+					}
+				}
+
+				if (!all_sets_done){
+					//cout << "reading: " << sequence_path + current_word + "/depth-" + frame_str + ".png" << endl;
+					worker->current_frame.depth = cv::imread(sequence_path + current_word + "/depth-" + frame_str + ".png", cv::IMREAD_ANYDEPTH);
+					if (!worker->settings->use_synthetic_depth) {
+						//cout << "reading: " << sequence_path + current_word + "/color-" + frame_str + ".png" << endl;;
+						worker->current_frame.color = cv::imread(sequence_path + current_word + "/color-" + frame_str + ".png");
+						//worker->model->real_color = cv::imread(sequence_path + "full_color-" + stringstream.str() + ".png");
+					}
+				}
+
+			}
+			else{
+				stringstream << std::setw(7) << std::setfill('0') << (worker->current_frame.id - frame_setback);
+				std::cout << sequence_path + current_word + "depth-" + stringstream.str() + ".png" << endl;
+				worker->current_frame.depth = cv::imread(sequence_path + current_word + "depth-" + stringstream.str() + ".png", cv::IMREAD_ANYDEPTH);
+				if (!worker->settings->use_synthetic_depth) {
+					worker->current_frame.color = cv::imread(sequence_path + current_word + "color-" + stringstream.str() + ".png");
+					//worker->model->real_color = cv::imread(sequence_path + "full_color-" + stringstream.str() + ".png");
+				}
+			}
+		}
+		/*
+		if (worker->settings->dataset_type == TKACH) {
 			stringstream << std::setw(7) << std::setfill('0') << worker->current_frame.id;
 			//std::cout << sequence_path + "depth-" + stringstream.str() + ".png" << endl;
 			worker->current_frame.depth = cv::imread(sequence_path + "depth-" + stringstream.str() + ".png", cv::IMREAD_ANYDEPTH);
 			if (!worker->settings->use_synthetic_depth) {
 				worker->current_frame.color = cv::imread(sequence_path + "color-" + stringstream.str() + ".png");
-				worker->model->real_color = cv::imread(sequence_path + "full_color-" + stringstream.str() + ".png");
+				//worker->model->real_color = cv::imread(sequence_path + "full_color-" + stringstream.str() + ".png");
 			}
 		}
+		*/
 		if (worker->settings->dataset_type == TOMPSON) {
 			std::string dataset_path = "C:/Data/datasets/nyu_hand_dataset_v2/test/";
 			stringstream << std::setw(7) << std::setfill('0') << worker->current_frame.id + 1;
@@ -1013,6 +1127,34 @@ public:
 		}
 
 		worker->current_frame.id++;
+	}
+
+	//Brandon Function for loading prompts
+	void load_prompts_list() {
+
+		words = std::vector<std::string>();
+		if (handshape) {
+			cout << "Loading ABCs" << endl;
+			ifstream fp("C:/Projects/MyoFaceVersion/hmodel/data/prompts/handshapes.txt"); // non_abcList.txt");
+			std::string word;
+			while (getline(fp, word)) {
+				words.push_back(word);
+			}
+			fp.close();
+			word_i = 0;
+		}
+		else {
+			ifstream fp("C:/Projects/MyoFaceVersion/hmodel/data/prompts/randomizedLists.txt"); // randomizedLists.txt");
+			std::string word;
+			while (getline(fp, word)) {
+				words.push_back(word);
+				//cout << "loaded: " << word << endl;
+			}
+			fp.close();
+			word_i = 0;
+		}
+		current_word = words[word_i++];
+		std::cout << "Loaded " << words.size() << " words. Current Word: " << current_word << std::endl;
 	}
 
 };

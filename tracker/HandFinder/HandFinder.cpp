@@ -22,10 +22,10 @@ HandFinder::HandFinder(Camera *camera, int downsampling_factor, bool fit_wrist_s
 
 	sensor_indicator = new int[upper_bound_num_sensor_points];
 
-	settings->hsv_min[0] = 94;
+	settings->hsv_min[0] = 14; // 94;
 	settings->hsv_min[1] = 111;
 	settings->hsv_min[2] = 37;
-	settings->hsv_max[0] = 120;
+	settings->hsv_max[0] = 34; // 120;
 	settings->hsv_max[1] = 255;
 	settings->hsv_max[2] = 255;
     

@@ -3,7 +3,7 @@
 # ADD_EXECUTABLE (executable ${YOUR_EXECUTABLE_SRCS})
 
 if(WIN32)
-    set(GLM_INCLUDE_DIRS "C:/Developer/include")
+    set(GLM_INCLUDE_DIRS "C:/Developer/glm")
 else()
 FIND_PATH( GLM_INCLUDE_DIRS glm/glm.hpp
     $ENV{GLM_DIR}

@@ -24,7 +24,7 @@ public:
 		}
 		else {*/
 			metric = pull_error;			
-			if (dataset_type == TKACH) threshold = 6.0;
+			if (dataset_type == TKACH || dataset_type == BRANDON) threshold = 6.0;
 			if (dataset_type == TOMPSON) threshold = 7.0;
 			if (dataset_type == SHARP) threshold = 7.0;
 			if (dataset_type == SRIDHAR) threshold = 6.5;

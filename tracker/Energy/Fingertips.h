@@ -21,9 +21,9 @@
 			bool enable_fingertips_prior = true;		
 			bool weight = 200;
 			size_t history_size = 20;
-			std::vector<size_t> fingertips_centers_indices = { 32, 12, 8, 4, 0 };
-			std::vector<size_t> fingermiddles_centers_indices = { 17, 13, 9, 5, 1 };
-			std::vector<size_t> fingertips_block_indices = { 27, 9, 6, 3, 0 };
+			std::vector<size_t> fingertips_centers_indices = std::vector<size_t>{ 32, 12, 8, 4, 0 };
+			std::vector<size_t> fingermiddles_centers_indices = std::vector<size_t>{ 17, 13, 9, 5, 1 };
+			std::vector<size_t> fingertips_block_indices = std::vector<size_t>{ 27, 9, 6, 3, 0 };
 		} _settings;
 		Settings* settings = &_settings;
 
