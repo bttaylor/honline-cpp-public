@@ -155,7 +155,7 @@ void GLWidget::paintGL() {
 
 		// fabrice - 400, // timur - 599 // pier2 - 599 // jan2 - 1199 // edoardo4 - 599 // filippe - 599 // matthieu2 - 1359 // jacomo3 - 599 // madeleine2 - 599 // stefano2 - 599 // anastasia - 519 // isinsu - 599
 		// mina - 599 // andrii5 - 399 // luca 859 // alexis3 - 1339
-		int last_calibration_frame = 1500; //599
+		int last_calibration_frame = 500; //599
 		if (convolution_renderer.num_frames_since_calibrated == 0 || (worker->current_frame.id == last_calibration_frame || worker->current_frame.id == last_calibration_frame + 1 && convolution_renderer.num_frames_since_calibrated < 0)) {
 			cout << "CALIBRATED: " << worker->current_frame.id << endl;
 			convolution_renderer.num_frames_since_calibrated = 0;
@@ -163,7 +163,8 @@ void GLWidget::paintGL() {
 			{ /// Write calibrated model to file
 				std::vector<float> theta = worker->model->get_theta();
 				worker->model->set_initial_pose();
-				worker->model->write_model(worker->settings->calibrated_model_path);
+				if (worker->settings->calibration_type != 0)
+					worker->model->write_model(worker->settings->calibrated_model_path); // +"second/");
 				//worker->model->write_model(sequence_path);
 				worker->model->update_theta(theta); worker->model->update_centers();
 			}
@@ -171,9 +172,9 @@ void GLWidget::paintGL() {
 			{ /// Stop calibrating
 				//worker->settings->restart_clock = true;
 				worker->set_calibration_type(NONE);
-				worker->E_fitting.settings->fit2D_outline_enable = false;
+				worker->E_fitting.settings->fit2D_outline_enable = true; // false;
 				worker->E_fitting.settings->fit2D_weight = 0.4f;
-				worker->settings->termination_max_iters = 6;
+				worker->settings->termination_max_iters = 8; // 6;
 				worker->E_fingertips._settings.enable_fingertips_prior = false;
 				worker->E_pose._settings.weight_proj = 4 * 10e2;
 				convolution_renderer.display_estimated_certainty = false;
@@ -429,7 +430,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event) {
 
 			/// > write calibrated model
 			worker->model->set_initial_pose();
-			worker->model->write_model(worker->model->calibrated_model_path);
+			worker->model->write_model(worker->settings->calibrated_model_path);
 
 			worker->settings->pause_tracking = false;
 			{

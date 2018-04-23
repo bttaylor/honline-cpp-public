@@ -41,6 +41,7 @@ public:
 	void setup_pose_dofs();
 
 	void setup_thetas_limits();
+	void setup_thetas_limits_right_hand();
 
 	void setup_shape_dofs();
 

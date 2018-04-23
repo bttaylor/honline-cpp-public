@@ -203,7 +203,8 @@ std::map<std::string, double> get_default_evaluation_settings() {
 }
 
 void run_experiment(const std::map<std::string, double> & worker_settings, std::string experiment_stage, std::string experiment_type) {
-	std::string command_line = path_to_exe + " " + sequence_name + "\\";
+	std::string command_line = path_to_exe + " " + sequence_name + "\\";  //original
+	//std::string command_line = path_to_exe + " " + sequence_name; // +"\\";  //Fingerspell mod
 	for (auto iterator : worker_settings) command_line += " " + iterator.first + " " + to_string(iterator.second);
 	cout << "   " + experiment_stage << endl;
 	/// Add logging
@@ -222,19 +223,23 @@ void run_honline_and_move_files(const std::map<std::string, double> & calibratio
 }
 
 void repetivite_task_on_several_sequences() {
-	std::vector<std::string> sequence_names = { "andrii", "edoardo", "fabrice", "filippe", "jacomo", "jan", "luca", "madeleine", "mina", "pier", "stefano", "timur"};
+	//std::vector<std::string> sequence_names = { "user1" }; 
+	std::vector<std::string> sequence_names = { "20" }; 
+	//std::vector<std::string> sequence_names = { "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"};// , "fabrice", "filippe", "jacomo", "jan", "luca", "madeleine", "mina", "pier", "stefano", "timur"};
 	for (size_t sequence_index = 0; sequence_index < sequence_names.size(); sequence_index++) {
 		sequence_name = sequence_names[sequence_index];
 		std::cout << "sequence_name = " << sequence_name << endl;
 		std::map<std::string, double> worker_settings;
 
+		
 		// find model
-		/*worker_settings = get_default_calibration_settings();
+		worker_settings = get_default_calibration_settings();
 		worker_settings["perturb_template"] = false;
 		worker_settings["run_kalman_filter"] = true;
 		worker_settings["kalman_filter_type"] = STANDARD;
 		worker_settings["sequence_length"] = 300;
-		run_experiment(worker_settings, "CALIBRATION", "");*/
+		run_experiment(worker_settings, "CALIBRATION", "");
+		
 
 		// find solutions
 		worker_settings = get_default_evaluation_settings();

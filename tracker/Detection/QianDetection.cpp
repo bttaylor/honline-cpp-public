@@ -28,6 +28,8 @@ QianDetection::~QianDetection(){
 }
 
 bool QianDetection::can_reinitialize(){
+	if (settings->display)
+		cout << "QianDetection display is true;" << endl;
     return find_fingers->find_fingers_main(settings->display);
 }
 

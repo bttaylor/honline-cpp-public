@@ -9,7 +9,7 @@ private:
     Camera*const camera=NULL;
     TrivialDetector*const trivial_detector=NULL;
 public:
-    HandFinder(Camera * camera, int downsamping_factor, bool fit_wrist_separately);
+    HandFinder(Camera * camera, int downsamping_factor, bool fit_wrist_separately, WristBandColor color);
 	~HandFinder() {
 		delete[] sensor_indicator;
 	}

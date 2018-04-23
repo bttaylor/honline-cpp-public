@@ -88,7 +88,12 @@ void Model::init(std::string data_path, std::string sequence_path, std::string s
 	semantics.setup_blockid_to_phalangeid_map();
 	semantics.setup_jointid_to_phalangeid_map();
 	semantics.setup_pose_dofs();
-	semantics.setup_thetas_limits();
+	//Brandon Test
+	bool right_hand = false;
+	if (right_hand)
+		semantics.setup_thetas_limits_right_hand();
+	else
+		semantics.setup_thetas_limits();
 	semantics.setup_pose_units_and_kinematic_chains();
 
 	if (show_initialization_calls) cout << "run beta setups" << endl;
@@ -606,10 +611,30 @@ void Model::load_model_from_file(bool load_calibrated_model, std::string input_p
 
 	cout << "model_path = " << model_path << endl;
 
-	read_model_centers(model_path, "C", centers);
-	read_model_radii(model_path, "R", radii);
-	read_model_blocks(model_path, "B", blocks);
+	bool right = false;  //Brandon Testing purposes
+	if (right == true){
 
+		read_model_centers(model_path, "C_Right", centers);
+		read_model_radii(model_path, "R", radii);
+		read_model_blocks(model_path, "B", blocks);
+		// Read initial transformations
+		FILE *fp = fopen((model_path + "I_Right.txt").c_str(), "r");
+		int N; fscanf(fp, "%d", &N);
+		for (int i = 0; i < num_phalanges + 1; ++i) {
+			phalanges[i].init_local = Mat4f::Zero(d + 1, d + 1);
+			for (size_t u = 0; u < d + 1; u++) {
+				for (size_t v = 0; v < d + 1; v++) {
+					fscanf(fp, "%f", &phalanges[i].init_local(v, u));
+				}
+			}
+		}
+		fclose(fp);
+	}
+	else{
+
+		read_model_centers(model_path, "C", centers);
+		read_model_radii(model_path, "R", radii);
+		read_model_blocks(model_path, "B", blocks);
 	// Read initial transformations
 	FILE *fp = fopen((model_path + "I.txt").c_str(), "r");
 	int N; fscanf(fp, "%d", &N); 
@@ -622,6 +647,8 @@ void Model::load_model_from_file(bool load_calibrated_model, std::string input_p
 		}
 	}
 	fclose(fp);
+	}
+
 
 	//for (size_t i = 0; i < centers.size(); i++) {
 	//	centers[i] += glm::vec3(0, 0, 375);
@@ -1288,6 +1315,7 @@ Mat3f Model::build_rotation_matrix(Vec3f euler_angles) {
 	return Rz * Ry * Rx;
 }
 
+/*
 void Model::manually_adjust_initial_transformations() {
 	Mat3f R;
 	// thumb
@@ -1315,7 +1343,7 @@ void Model::manually_adjust_initial_transformations() {
 	update_parameters(theta);
 	update_centers();
 	initialize_offsets();
-}
+}*/
 
 void Model::resize_model(float uniform_scaling_factor, float width_scaling_factor, float thickness_scaling_factor) {
 	Mat3d scaling_matrix = Mat3d::Identity();

@@ -206,6 +206,7 @@ void FindFingers::display_all_fingers(const Matrix_MxN &depth) {
 
     cv::circle(image, cv::Point(scale * palm_center(1), scale * palm_center(0)), 10.0, cv::Scalar(0.0, 0.0, 1.0), -1, 16);
     cv::resize(image, image, cv::Size(image.cols / 2, image.rows / 2));
+	cout << "FindFingers::display_all_fingers() called " << endl;
     cv::imshow("FindFingers", image);
 }
 

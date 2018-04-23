@@ -85,8 +85,8 @@ int i = 1;
 int sensor_frame = 0;
 int tracker_frame = 0;
 
-SensorRealSense::SensorRealSense(Camera *camera, bool real_color, int downsampling_factor, bool fit_wrist_separately) : Sensor(camera) {
-	this->handfinder = new HandFinder(camera, downsampling_factor, fit_wrist_separately);
+SensorRealSense::SensorRealSense(Camera *camera, bool real_color, int downsampling_factor, bool fit_wrist_separately, WristBandColor color) : Sensor(camera) {
+	this->handfinder = new HandFinder(camera, downsampling_factor, fit_wrist_separately, color);
 	this->real_color = real_color;
 	this->downsampling_factor = downsampling_factor;
 }

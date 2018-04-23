@@ -135,10 +135,12 @@ void energy::Fitting::init(Worker *worker) {
 }
 
 void energy::Fitting::track(DataFrame& frame, LinearSystem& system, bool rigid_only, bool eval_error, bool calibrate, float & push_error, float & pull_error, float & weighted_error, int iter) {
-
+	
 	/// > Make sure sensor has necessary data
 	assert(sensor_depth_texture->check_loaded(frame.id));
+	
 	static int last_uploaded_id = -1;
+	//cout << "Fitting::track frame.id: " << frame.id << " last_uploaded_id: " << last_uploaded_id << endl;
 
 	/// > Upload hand model
 	kernel_upload_model(d, model->num_parameters, model->centers.size(), model->blocks.size(), model->outline_finder.outline3D.size(), model->num_tangent_fields, model->num_outline_fields,

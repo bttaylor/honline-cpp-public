@@ -558,14 +558,14 @@ void ModelSemantics::setup_calibration_type_to_num_betas_map() {
 void ModelSemantics::setup_calibration_type_to_beta_template_map() {
 	model->calibration_type_to_beta_template_map[NONE] = {};
 	model->calibration_type_to_beta_template_map[FINGERS_PARTIAL] = {
-		/*phalnages*/ 37.1409f, 28.436f, 14.0316f, 37.0552f, 20.5967f, 12.8331f, 40.4944f, 23.2687f, 15.9073f, 37.9263f, 23.9032f, 13.6011f, 31.9997f, 19.1319f, 12.8207f };
+		/*phalanges*/ 37.1409f, 28.436f, 14.0316f, 37.0552f, 20.5967f, 12.8331f, 40.4944f, 23.2687f, 15.9073f, 37.9263f, 23.9032f, 13.6011f, 31.9997f, 19.1319f, 12.8207f };
 
 	model->calibration_type_to_beta_template_map[FINGERS] = {
-		/*phalnages*/ 37.1409f, 28.436f, 14.0316f, 37.0552f, 20.5967f, 12.8331f, 40.4944f, 23.2687f, 15.9073f, 37.9263f, 23.9032f, 13.6011f, 31.9997f, 19.1319f, 12.8207f,
+		/*phalanges*/ 37.1409f, 28.436f, 14.0316f, 37.0552f, 20.5967f, 12.8331f, 40.4944f, 23.2687f, 15.9073f, 37.9263f, 23.9032f, 13.6011f, 31.9997f, 19.1319f, 12.8207f,
 		/*fingers-bases*/ 9.72575f, 3.87206f, -7.16046f, 25.3963f, 50.8191f, 2.28707f, 8.13206f, 52.8925f, 7.5463f, -5.93253f, 49.1046f, 7.7991f, -18.1006f, 44.8872f, 3.8978f };
 
 	model->calibration_type_to_beta_template_map[FINGERS_AND_PALM] = {
-		/*phalnages*/ 37.1409f, 28.436f, 14.0316f, 37.0552f, 20.5967f, 12.8331f, 40.4944f, 23.2687f, 15.9073f, 37.9263f, 23.9032f, 13.6011f, 31.9997f, 19.1319f, 12.8207f,
+		/*phalanges*/ 37.1409f, 28.436f, 14.0316f, 37.0552f, 20.5967f, 12.8331f, 40.4944f, 23.2687f, 15.9073f, 37.9263f, 23.9032f, 13.6011f, 31.9997f, 19.1319f, 12.8207f,
 		/*fingers-bases*/  9.72575f, 3.87206f, -7.16046f, 25.3963f, 50.8191f, 2.28707f, 8.13206f, 52.8925f, 7.5463f, -5.93253f, 49.1046f, 7.7991f, -18.1006f, 44.8872f, 3.8978f,
 		/*palm-centers*/ 23.9371f, 45.629f, -17.9329f, 38.572f, 7.31059f, 3.0928f, -10.0083f, 1.01374f, 28.5967f, 41.231f,
 		/*wrist*/ 4.02408f,  48.6212f,
@@ -759,6 +759,7 @@ void ModelSemantics::setup_pose_dofs() {
 }
 
 void ModelSemantics::setup_thetas_limits() {
+
 	// Joint limits
 	// translation x
 	model->pose_dofs[0].min = -numeric_limits<float>::max();
@@ -845,6 +846,123 @@ void ModelSemantics::setup_thetas_limits() {
 	// pinky abduction
 	model->pose_dofs[25].min = -0.20;
 	model->pose_dofs[25].max = 0.65;
+	// pinky flexion 1
+	model->pose_dofs[26].min = -1.30;
+	model->pose_dofs[26].max = 1.60;
+	// pinky flexion 2
+	model->pose_dofs[27].min = -0.10;
+	model->pose_dofs[27].max = 2.00;
+	// pinky flexion 3
+	model->pose_dofs[28].min = -0.10;
+	model->pose_dofs[28].max = 2.00;
+
+	// thumb twist
+	model->pose_dofs[29].min = -0.40;
+	model->pose_dofs[29].max = 0.40;
+	// index twist
+	model->pose_dofs[30].min = -0.45;
+	model->pose_dofs[30].max = 0.05;
+	// middle twist
+	model->pose_dofs[31].min = -0.15;
+	model->pose_dofs[31].max = 0.05;
+	// ring twist
+	model->pose_dofs[32].min = -0.10;
+	model->pose_dofs[32].max = 0.05;
+	// pinky twist
+	model->pose_dofs[33].min = -0.10;
+	model->pose_dofs[33].max = 0.05;
+
+}
+
+
+void ModelSemantics::setup_thetas_limits_right_hand() {
+
+	// Joint limits
+	// translation x
+	model->pose_dofs[0].min = -numeric_limits<float>::max();
+	model->pose_dofs[0].max = numeric_limits<float>::max();
+	// translation y
+	model->pose_dofs[1].min = -numeric_limits<float>::max();
+	model->pose_dofs[1].max = numeric_limits<float>::max();
+	// translation z
+	model->pose_dofs[2].min = -numeric_limits<float>::max();
+	model->pose_dofs[2].max = numeric_limits<float>::max();
+	// rotation x
+	model->pose_dofs[3].min = -numeric_limits<float>::max();
+	model->pose_dofs[3].max = numeric_limits<float>::max();
+	// rotation y
+	model->pose_dofs[4].min = -numeric_limits<float>::max();
+	model->pose_dofs[4].max = numeric_limits<float>::max();
+	// rotation z
+	model->pose_dofs[5].min = -numeric_limits<float>::max();
+	model->pose_dofs[5].max = numeric_limits<float>::max();
+
+	// nothing
+	model->pose_dofs[6].min = -numeric_limits<float>::max();
+	model->pose_dofs[6].max = numeric_limits<float>::max();
+
+	// wrist adbuction
+	model->pose_dofs[7].min = -.2;
+	model->pose_dofs[7].max = 1;
+	// wrist flexion
+	model->pose_dofs[8].min = -1;
+	model->pose_dofs[8].max = 1.6;
+
+	// thumb abduction
+	model->pose_dofs[9].min = 1.0; // -0.1;
+	model->pose_dofs[9].max = -0.1; // 1.0;
+	// thumb flexion 1
+	model->pose_dofs[10].min = -0.5;
+	model->pose_dofs[10].max = 1.0;
+	// thumb flexion 2
+	model->pose_dofs[11].min = -0.9;
+	model->pose_dofs[11].max = 0.9;
+	// thumb flexion 3
+	model->pose_dofs[12].min = -1.4;
+	model->pose_dofs[12].max = 0.7;
+
+	// index abductions
+	model->pose_dofs[13].min = 0.35; // -0.30;
+	model->pose_dofs[13].max = -0.30; // 0.35;
+	// index flexion 1
+	model->pose_dofs[14].min = -1.30;
+	model->pose_dofs[14].max = 1.60;
+	// index flexion 2
+	model->pose_dofs[15].min = -0.10;
+	model->pose_dofs[15].max = 2.00;
+	// index flexion 3
+	model->pose_dofs[16].min = -0.10;
+	model->pose_dofs[16].max = 2.00;
+
+	// middle abduction
+	model->pose_dofs[17].min = 0.40; // -0.30;
+	model->pose_dofs[17].max = -0.30; // 0.40;
+	// middle flexion 1
+	model->pose_dofs[18].min = -1.30;
+	model->pose_dofs[18].max = 1.60;
+	// middle flexion 2
+	model->pose_dofs[19].min = -0.10;
+	model->pose_dofs[19].max = 2.00;
+	// middle flexion 3
+	model->pose_dofs[20].min = -0.10;
+	model->pose_dofs[20].max = 2.00;
+
+	// ring abduction
+	model->pose_dofs[21].min = 0.30; // -0.10;
+	model->pose_dofs[21].max = -0.10; // 0.30;
+	// ring flexion 1
+	model->pose_dofs[22].min = -1.30;
+	model->pose_dofs[22].max = 1.60;
+	// ring flexion 2
+	model->pose_dofs[23].min = -0.10;
+	model->pose_dofs[23].max = 2.00;
+	// ring flexion 3
+	model->pose_dofs[24].min = -0.10;
+	model->pose_dofs[24].max = 2.00;
+
+	// pinky abduction
+	model->pose_dofs[25].min = 0.65; // -0.20;
+	model->pose_dofs[25].max = -0.20; // 0.65;
 	// pinky flexion 1
 	model->pose_dofs[26].min = -1.30;
 	model->pose_dofs[26].max = 1.60;

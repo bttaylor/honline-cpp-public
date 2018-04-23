@@ -324,7 +324,7 @@ void BatchSolver::batch_solve_iteration() {
 	worker->settings->solve_linear_system = false;
 
 	std::vector<LinearSystem> systems = std::vector<LinearSystem>(num_poses, LinearSystem(worker->model->num_parameters));
-	bool display_iterations = false;
+	bool display_iterations = true;  
 	for (size_t pose_index = 0; pose_index < num_poses; pose_index++) {
 
 		//cout << "applying the pose " << pose_index << endl;

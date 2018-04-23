@@ -120,7 +120,7 @@ public:
 		//}
 
 
-
+		cout << "FingertipsDetector::display_all_fingers() called." << endl;
 		cv::imshow("FindFingers", image);
 	}
 

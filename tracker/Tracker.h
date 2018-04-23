@@ -69,13 +69,18 @@ public:
 	GLWidget * glwidget;
 
 	//Brandon Mods
+	bool last_was_pause = false;
+	int reset_frame = -101;
 	int user_num;
-	std::string word;
-	int word_i = 0;
-	std::vector<std::string> words;
+	std::string prompt;
+	int prompt_i = 0;
+	std::vector<std::string> prompts;
+	std::string current_prompt;
 	bool handshape = true;
+	int hs_set_num = 1;
+	bool fingerspelling = false; //Fingerspelling Mod
 	bool all_sets_done = false;
-	int set_frame = 0;
+	int set_frame = 54;
 
 
 	Tracker(Worker*worker, GLWidget * glwidget, double FPS, std::string sequence_path, bool real_color) : worker(worker), glwidget(glwidget), synthetic_dataset_generator(worker, sequence_path){
@@ -83,6 +88,9 @@ public:
 		setInterval((1.0 / FPS)*1000.0);
 		this->sequence_path = sequence_path;
 		this->real_color = real_color;
+
+		//Brandon Added
+		load_prompts_list();
 
 		if (worker->settings->sequence_length >= 0) {
 			sequence_length = worker->settings->sequence_length;
@@ -111,7 +119,6 @@ public:
 			}
 		}
 
-		load_prompts_list();
 	}
 
 	void toggle_tracking(bool on) {
@@ -145,7 +152,7 @@ public:
 	int speedup = 1;
 	int start_frame = 0;
 	std::string sharp_sequence_name = "globalSubjectA";
-	std::string current_word = "aberdeen_1_";
+	//std::string current_word = "aberdeen_1_";
 	int frame_setback = 0;
 
 	void print() {
@@ -170,24 +177,29 @@ public:
 		//perturb_model_while_tracking();
 		//cout << "1" << endl;
 		if (worker->settings->pause_tracking == true) {
-			cout << "Paused" << endl;
+			if (!last_was_pause){
+				cout << "Paused" << endl;
+				last_was_pause = true;
+			}
 			worker->offscreen_renderer.render_offscreen(true, false, false);
 			worker->updateGL(); return;
+		}
+		else{
+			last_was_pause = false;
 		}
 		if (worker->current_frame.id < 0) { worker->updateGL(); Sleep(1500); worker->current_frame.id = start_frame; }
 
 		//cout << "2" << endl;
 		//Brandon
-		if (set_frame == 2){
-			std::cout << "Increasing termination_max_iters to 150" << std::endl;
-			//worker->ground_truth_loader->enable_ground_truth_reinit = true;
-			worker->settings->termination_max_iters = 150;
+		if (set_frame == reset_frame + 31){
+
+			//std::cout << "Enabling calibration. Setting termination _max_iters to 15." << endl;
+			//worker->set_calibration_type(FULL);
+			//worker->settings->termination_max_iters = 15;
+			//tracking_enabled = true;
 		}
-		if (set_frame == 4) {
-			std::cout << "Decreasing termination_max_iters to 15" << std::endl;
-			//worker->ground_truth_loader->enable_ground_truth_reinit = false;
-			worker->settings->termination_max_iters = 15;
-		}
+
+		
 
 		reinitialize();
 		print();
@@ -208,6 +220,7 @@ public:
 				//cout << "4" << endl;
 				fetch_recorded_depth();
 				//cout << "5" << endl;
+				//process_new_sequence();
 			}
 			sensor_fetching_time = std::clock() - tracking_start_time; if (worker->settings->report_times) std::cout << "fetching = " << sensor_fetching_time - frame_start_time << endl;
 		}
@@ -257,11 +270,19 @@ public:
 
 			}
 
+			if (set_frame == 0){
+				std::vector<float> theta = worker->model->get_theta();
+				theta[3] = 3.0;
+				theta[4] = -3.0;
+				theta[5] = 3.0;
+				worker->model->update_theta(theta); worker->model->update_centers();
+			}
+
 			//cout << "8" << endl;
 			if (tracking_enabled) {
 				tracking_failed = worker->track_till_convergence();
 			}
-			//cout << "9" << endl;
+			
 			if (initialization_enabled && tracking_failed) {
 				static QianDetection detection(worker);
 				if (detection.can_reinitialize()) {
@@ -275,6 +296,8 @@ public:
 			if (tracking_enabled) worker->offscreen_renderer.render_offscreen(true, false, false);
 			if (!worker->settings->run_experiments) worker->updateGL();
 			if (worker->settings->run_batch_solver) glFinish();
+			save_rendered_frame();
+
 			//if (mode == BENCHMARK && real_color) display_color_and_depth_input();		
 			if (real_color) display_color_and_depth_input();
 			rendering_time = std::clock() - tracking_start_time; if (worker->settings->report_times) std::cout << "rendering = " << rendering_time - tracking_time << endl;
@@ -306,7 +329,7 @@ public:
 		if (!worker->settings->pause_current_frame) worker->current_frame.id++;
 		//if (!worker->settings->pause_current_frame) set_frame++;
 
-		if (!handshape)	{
+		if (!handshape && !fingerspelling)	{
 			if (worker->current_frame.id == sequence_length && mode == BENCHMARK) process_end_of_sequence();
 		}
 		else{
@@ -343,16 +366,18 @@ public:
 		for (size_t i = 0; i < reinitialization_frame_ids.size(); i++) {
 			if (worker->current_frame.id == reinitialization_frame_ids[i]) {
 				if (worker->settings->dataset_type == BRANDON){
-					current_word = "afghanistan_1_";
+					current_prompt = "afghanistan_1_";
 					frame_setback += reinitialization_frame_ids[i];
-					std::cout << "Reinitialize at frame: " << worker->current_frame.id << "  Read from: " + sequence_path + current_word + "depth-" + "_______" + ".png" << std::endl;
+					std::cout << "Reinitialize at frame: " << worker->current_frame.id << "  Read from: " + sequence_path + current_prompt + "depth-" + "_______" + ".png" << std::endl;
 				}
 				cout << worker->current_frame.id << endl;
 				worker->ground_truth_loader->enable_ground_truth_reinit = true;
+				cout << "reinitialize() setting termination_max_iters to 150" << endl;
 				worker->settings->termination_max_iters = 150;
 			}
 			if (worker->current_frame.id == reinitialization_frame_ids[i] + 3) {
 				worker->ground_truth_loader->enable_ground_truth_reinit = false;
+				cout << "reinitialize() setting termination_max_iters to 15" << endl;
 				worker->settings->termination_max_iters = 15;
 			}
 		}
@@ -397,8 +422,9 @@ public:
 
 		this->stop();
 		worker->glarea->close();
-		tracking_metrics_file.close();
-		weighted_metrics_file.close();
+		if (tracking_metrics_file.is_open()) tracking_metrics_file.close();
+		if (weighted_metrics_file.is_open()) weighted_metrics_file.close();
+		if (solutions_file.is_open()) solutions_file.close();
 		worker->ground_truth_loader->marker_based_metrics_file.close();
 
 		cout << "the end of sequence was reached, sequence length was " << worker->current_frame.id << " = " << sequence_length << endl;
@@ -554,8 +580,16 @@ public:
 			solutions->set(datastream->size() - 1, worker->model->num_parameters, worker->model->get_theta(), worker->model->get_beta());
 
 		if (mode == BENCHMARK) {
-			std::string tracking_metrics_filename = sequence_path + "online_continuous_metrics.txt";
-			std::string weighted_metrics_filename = sequence_path + "online_weighted_metrics.txt";
+			std::string tracking_metrics_filename("");// = sequence_path + "online_continuous_metrics.txt";
+			std::string weighted_metrics_filename("");// = sequence_path + "online_weighted_metrics.txt";
+			if (handshape){
+				tracking_metrics_filename = worker->settings->calibrated_model_path + "set" + std::to_string(hs_set_num) + "/" + current_prompt + "online_continuous_metrics.txt";
+				weighted_metrics_filename = worker->settings->calibrated_model_path + "set" + std::to_string(hs_set_num) + "/" + current_prompt + "online_weighted_metrics.txt";
+			}
+			else{
+				tracking_metrics_filename = worker->settings->calibrated_model_path + current_prompt + "online_continuous_metrics.txt";
+				weighted_metrics_filename = worker->settings->calibrated_model_path + current_prompt + "online_weighted_metrics.txt";
+			}
 			if (worker->settings->run_experiments) {
 				tracking_metrics_filename = sequence_path + "online_continuous_metrics_exp.txt";
 				weighted_metrics_filename = sequence_path + "online_weighted_metrics_exp.txt";
@@ -567,8 +601,13 @@ public:
 			if (!weighted_metrics_file.is_open()) weighted_metrics_file = ofstream(weighted_metrics_filename);
 			if (weighted_metrics_file.is_open()) weighted_metrics_file << worker->tracking_error.weighted_error << endl;
 		}
-
-		if (!solutions_file.is_open()) solutions_file = ofstream(sequence_path + "solutions.txt");
+		if (handshape){
+			if (!solutions_file.is_open()) solutions_file = ofstream(worker->settings->calibrated_model_path + "set" + std::to_string(hs_set_num) + "/" + current_prompt + "solutions.txt");
+		}
+		else{
+			if (!solutions_file.is_open()) solutions_file = ofstream(worker->settings->calibrated_model_path + current_prompt + "solutions.txt");
+		}
+		//if (!solutions_file.is_open()) solutions_file = ofstream(sequence_path + "solutions.txt");
 		if (solutions_file.is_open()) solutions_file << solutions->frames[datastream->size() - 1].transpose() << endl;
 
 		if (worker->settings->write_estimated_certainties && worker->settings->run_kalman_filter) {
@@ -670,47 +709,103 @@ public:
 			if (handshape){
 				std::string frame_str = std::string(7 - std::to_string(set_frame).length(), '0') + std::to_string(set_frame);
 				//stringstream << std::setw(7) << std::setfill('0') << set_frame; // (worker->current_frame.id - frame_setback);
-				std::string checkFile = sequence_path + current_word + "/depth-" + frame_str + ".png";
+				std::string set_string = "set" + std::to_string(hs_set_num) + "/";
+				std::string checkFile = sequence_path + set_string + current_prompt + "/depth-" + frame_str + ".png";
 				//std::cout << "Checking: " << checkFile << endl;
 
 				ifstream ftest(checkFile.c_str());
 				while (ftest.fail() && !all_sets_done){
-					std::cout << "Failed to Load: " << checkFile << endl;
-					std::cout << "word_i: " << word_i << " words.size(): " << words.size() << std::endl;
-					if (word_i >= words.size()){
-						std::cout << "End of all sets " << std::endl;
-						all_sets_done = true;
+					std::cout << "Failed to Load: " << checkFile << endl;					
+					if (prompt_i >= prompts.size()){
+						hs_set_num++;
+						if (hs_set_num > 3){
+							std::cout << "End of all sets " << std::endl;
+							all_sets_done = true;
+						}
 					}
 					else{
-						current_word = words[word_i++];						
+						current_prompt = prompts[prompt_i++];
 						set_frame = 0; 
-						cout << "Next word: " << current_word;
+						cout << "Next prompt: " << current_prompt << ". prompt_i: " << prompt_i << " of prompts.size(): " << prompts.size() << endl;
 						//worker->model->set_initial_pose();
 						cout << " model reset to initial pose" << endl;
 						frame_str = std::string(7 - std::to_string(set_frame).length(), '0') + std::to_string(set_frame);
 						stringstream << std::setw(7) << std::setfill('0') << set_frame; // (worker->current_frame.id - frame_setback);
-						checkFile = sequence_path + current_word + "/depth-" + frame_str + ".png";
+						checkFile = sequence_path + set_string + current_prompt + "/depth-" + frame_str + ".png";
 						ftest.open(checkFile.c_str());
 					}
 				}
 
 				if (!all_sets_done){
-					//cout << "reading: " << sequence_path + current_word + "/depth-" + frame_str + ".png" << endl;
-					worker->current_frame.depth = cv::imread(sequence_path + current_word + "/depth-" + frame_str + ".png", cv::IMREAD_ANYDEPTH);
+					//cout << "reading: " << sequence_path + current_prompt + "/depth-" + frame_str + ".png" << endl;
+					worker->current_frame.depth = cv::imread(sequence_path + set_string + current_prompt + "/depth-" + frame_str + ".png", cv::IMREAD_ANYDEPTH);
 					if (!worker->settings->use_synthetic_depth) {
-						//cout << "reading: " << sequence_path + current_word + "/color-" + frame_str + ".png" << endl;;
-						worker->current_frame.color = cv::imread(sequence_path + current_word + "/color-" + frame_str + ".png");
+						//cout << "reading: " << sequence_path + current_prompt + "/color-" + frame_str + ".png" << endl;;
+						worker->current_frame.color = cv::imread(sequence_path + set_string + current_prompt + "/color-" + frame_str + ".png");
 						//worker->model->real_color = cv::imread(sequence_path + "full_color-" + stringstream.str() + ".png");
 					}
 				}
 
 			}
+			else if (fingerspelling){
+
+				std::string frame_str = std::string(7 - std::to_string(set_frame).length(), '0') + std::to_string(set_frame);
+				//stringstream << std::setw(7) << std::setfill('0') << set_frame; // (worker->current_frame.id - frame_setback);
+				std::string checkFile = sequence_path + current_prompt + "_1_depth-" + frame_str + ".png";
+				//std::cout << "Checking: " << checkFile << endl;
+
+				ifstream ftest(checkFile.c_str());
+				while (ftest.fail() && !all_sets_done){
+					std::cout << "Failed to Load: " << checkFile << endl;					
+					if (prompt_i >= prompts.size()){
+						std::cout << "End of all sets " << std::endl;
+						all_sets_done = true;
+					}
+					else{
+						current_prompt = prompts[prompt_i++];
+						set_frame = 0;
+						cout << "Next prompt: " << current_prompt << ". prompt_i: " << prompt_i << " of prompts.size(): " << prompts.size() << endl;
+						reset_hand();
+						//worker->model->set_initial_pose();
+						//cout << " model reset to initial pose" << endl;
+						frame_str = std::string(7 - std::to_string(set_frame).length(), '0') + std::to_string(set_frame);
+						stringstream << std::setw(7) << std::setfill('0') << set_frame; // (worker->current_frame.id - frame_setback);
+						checkFile = sequence_path + current_prompt + "_1_depth-" + frame_str + ".png";
+						ftest.open(checkFile.c_str());
+					}
+				}
+
+				if (!all_sets_done){
+					//cout << std::to_string(set_frame) << " ";
+					//cout << "reading: " << sequence_path + current_prompt + "_1_depth-" + frame_str + ".png" << endl;
+					if (worker->settings->handedness == LEFT_HAND){
+						worker->current_frame.depth = cv::imread(sequence_path + current_prompt + "_1_depth-" + frame_str + ".png", cv::IMREAD_ANYDEPTH);
+					}
+					else{
+						cv::Mat temp = cv::imread(sequence_path + current_prompt + "_1_depth-" + frame_str + ".png", cv::IMREAD_ANYDEPTH);
+						cv::flip(temp, temp, 1);
+						worker->current_frame.depth = temp; // cv::imread(sequence_path + current_prompt + "_1_depth-" + frame_str + ".png", cv::IMREAD_ANYDEPTH);
+					}
+					if (!worker->settings->use_synthetic_depth) {
+						//cout << "reading: " << sequence_path + current_prompt + "/color-" + frame_str + ".png" << endl;;
+						if (worker->settings->handedness == LEFT_HAND){
+							worker->current_frame.color = cv::imread(sequence_path + current_prompt + "_1_color-" + frame_str + ".png");
+						}
+						else{
+							cv::Mat temp = cv::imread(sequence_path + current_prompt + "_1_color-" + frame_str + ".png");
+							cv::flip(temp, temp, 1);
+							worker->current_frame.color = temp;
+						}
+						//worker->model->real_color = cv::imread(sequence_path + "full_color-" + stringstream.str() + ".png");
+					}
+				}
+			}
 			else{
 				stringstream << std::setw(7) << std::setfill('0') << (worker->current_frame.id - frame_setback);
-				std::cout << sequence_path + current_word + "depth-" + stringstream.str() + ".png" << endl;
-				worker->current_frame.depth = cv::imread(sequence_path + current_word + "depth-" + stringstream.str() + ".png", cv::IMREAD_ANYDEPTH);
+				//std::cout << sequence_path + "sensor_data/" + "depth-" + stringstream.str() + ".png" << endl;
+				worker->current_frame.depth = cv::imread(sequence_path + "sensor_data/" + "depth-" + stringstream.str() + ".png", cv::IMREAD_ANYDEPTH);
 				if (!worker->settings->use_synthetic_depth) {
-					worker->current_frame.color = cv::imread(sequence_path + current_word + "color-" + stringstream.str() + ".png");
+					worker->current_frame.color = cv::imread(sequence_path + "sensor_data/" + "color-" + stringstream.str() + ".png");
 					//worker->model->real_color = cv::imread(sequence_path + "full_color-" + stringstream.str() + ".png");
 				}
 			}
@@ -774,6 +869,64 @@ public:
 			//cv::namedWindow("RGB");	cv::moveWindow("RGB", 592, 375); 
 			cv::imshow("RGB", real_color);
 		}
+	}
+
+	void save_rendered_frame(){
+		bool write_image = true;
+		if (write_image) {
+			std::ostringstream stringstream; stringstream << std::setw(4) << std::setfill('0') << set_frame;
+			std::string img_folder = worker->settings->calibrated_model_path + "images/" + current_prompt;
+			if (handshape)
+				img_folder = worker->settings->calibrated_model_path + "set" + std::to_string(hs_set_num) + "/images/" + current_prompt;
+
+			if (GetFileAttributesA(img_folder.c_str()) == INVALID_FILE_ATTRIBUTES)
+				CreateDirectory(img_folder.c_str(), NULL);
+
+			std::string image_name = worker->settings->calibrated_model_path + "images/" + current_prompt + "/" + current_prompt + stringstream.str() + ".jpg";
+			saveRendering(image_name);
+		}
+	}
+
+
+	void saveRendering(std::string filename) {
+
+		int width = 640 * 2;
+		int height = 480 * 2;
+		unsigned char* imageData = (unsigned char *)malloc((int)(width*height*(3)));
+		glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, imageData);
+
+		FILE *filePtr = fopen(filename.c_str(), "wb");
+		if (!filePtr)
+			return;
+
+		BITMAPFILEHEADER bitmapFileHeader;
+		BITMAPINFOHEADER bitmapInfoHeader;
+
+		bitmapFileHeader.bfType = 0x4D42; //"BM"
+		bitmapFileHeader.bfSize = width*height * 3;
+		bitmapFileHeader.bfReserved1 = 0;
+		bitmapFileHeader.bfReserved2 = 0;
+		bitmapFileHeader.bfOffBits =
+			sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+		bitmapInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bitmapInfoHeader.biWidth = width;
+		bitmapInfoHeader.biHeight = height;
+		bitmapInfoHeader.biPlanes = 1;
+		bitmapInfoHeader.biBitCount = 24;
+		bitmapInfoHeader.biCompression = BI_RGB;
+		bitmapInfoHeader.biSizeImage = 0;
+		bitmapInfoHeader.biXPelsPerMeter = 0; // ?
+		bitmapInfoHeader.biYPelsPerMeter = 0; // ?
+		bitmapInfoHeader.biClrUsed = 0;
+		bitmapInfoHeader.biClrImportant = 0;
+
+		fwrite(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
+		fwrite(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
+		fwrite(imageData, width*height * 3, 1, filePtr);
+		fclose(filePtr);
+
+		free(imageData);
 	}
 
 	void write_current_frame() {
@@ -1111,8 +1264,8 @@ public:
 					cv::namedWindow("RGB");	cv::moveWindow("RGB", 592, 375);
 					cv::imshow("RGB", worker->model->real_color);
 				}
-
-				/*bool write_image = true;
+				/*
+				bool write_image = true;
 				if (write_image) {
 					QImage image = glwidget->grabFramebuffer();
 					std::ostringstream stringstream; stringstream << std::setw(4) << std::setfill('0') << worker->current_frame.id;
@@ -1131,30 +1284,55 @@ public:
 
 	//Brandon Function for loading prompts
 	void load_prompts_list() {
+		if (worker->settings->calibration_type == 0)
+			cout << "calibration_type == 0" << endl;
+		else
+			cout << "calibration type != 0" << endl;
 
-		words = std::vector<std::string>();
+		prompts = std::vector<std::string>();
 		if (handshape) {
 			cout << "Loading ABCs" << endl;
 			ifstream fp("C:/Projects/MyoFaceVersion/hmodel/data/prompts/handshapes.txt"); // non_abcList.txt");
 			std::string word;
 			while (getline(fp, word)) {
-				words.push_back(word);
+				prompts.push_back(word);
 			}
 			fp.close();
-			word_i = 0;
+			prompt_i = 0;
 		}
 		else {
-			ifstream fp("C:/Projects/MyoFaceVersion/hmodel/data/prompts/randomizedLists.txt"); // randomizedLists.txt");
+			ifstream fp("C:/Projects/MyoFaceVersion/hmodel/data/prompts/hgjpqz_words.txt"); // randomizedLists.txt");
+			//ifstream fp("C:/Projects/MyoFaceVersion/hmodel/data/prompts/no_ghjpqz_words.txt"); // randomizedLists.txt");
 			std::string word;
 			while (getline(fp, word)) {
-				words.push_back(word);
+				if (worker->settings->calibration_type == NONE){  //0 == NONE
+					prompts.push_back(word);
+				}else{
+					if (prompts.size() < 12)
+						prompts.push_back(word);
+				}
 				//cout << "loaded: " << word << endl;
 			}
 			fp.close();
-			word_i = 0;
+			prompt_i = 0;
 		}
-		current_word = words[word_i++];
-		std::cout << "Loaded " << words.size() << " words. Current Word: " << current_word << std::endl;
+		current_prompt = prompts[prompt_i++];
+		std::cout << "Loaded " << prompts.size() << " words. Current Word: " << current_prompt << std::endl;
+	}
+
+	void reset_hand(){
+		//worker->model->set_initial_pose();
+		//cout << "Disabling calibration. Setting termination_max_iters to 150." << endl;
+		//worker->settings->termination_max_iters = 150;
+		//worker->set_calibration_type(NONE);
+		reset_frame = set_frame;
+		//initialization_enabled = true;
+		//tracking_failed = true;
+		//tracking_enabled = false;
+
+		solutions_file.close();
+		tracking_metrics_file.close();
+		weighted_metrics_file.close();
 	}
 
 };

@@ -39,6 +39,10 @@ public:
 		unsigned random_seed = 0;
 		float uniform_scaling_mean = 1.0;
 
+		//Brandon
+		Handedness handedness = LEFT_HAND;
+		WristBandColor wrist_band_color = BLUE_BAND;
+
 		DatasetType dataset_type = TKACH; // BRANDON; // TKACH;
 		CalibrationType calibration_type = NONE;
 		CalibrationStage calibration_stage = DEFAULT;

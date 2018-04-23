@@ -17,7 +17,8 @@ void parse_command_line(int argc, char* argv[], Worker & worker) {
 	bool verbose = true;
 
 	//for (size_t i = 0; i < argc; i++) cout << i << ": " << argv[i] << endl; 
-	worker.settings->sequence_name = argv[1];
+	//worker.settings->sequence_name = std::string(argv[1]);  //original
+	worker.settings->sequence_name = "P" + std::string(argv[1]);  //Fingerspell mod
 	if (verbose) cout << "sequence_name = " << worker.settings->sequence_name << endl;
 
 	std::map<std::string, float> settings_map;
@@ -30,6 +31,19 @@ void parse_command_line(int argc, char* argv[], Worker & worker) {
 	if (settings_map.find("calibration_type") != settings_map.end()) {
 		worker.settings->calibration_type = (CalibrationType)(int)settings_map["calibration_type"];
 		if (verbose) cout << "calibration_type = " << worker.settings->calibration_type << endl;
+		if (worker.settings->calibration_type == 0){
+			//worker.set_calibration_type(NONE);
+			worker.E_fitting.settings->fit2D_outline_enable = true; // false;
+			worker.E_fitting.settings->fit2D_weight = 0.4f;
+			worker.settings->termination_max_iters = 8; // 6;
+			worker.E_fingertips._settings.enable_fingertips_prior = false;
+			worker.E_pose._settings.weight_proj = 4 * 10e2;
+			worker.settings->display_estimated_certainty = false;
+			worker.settings->display_measured_certainty = false;
+			worker.settings->run_kalman_filter = false;
+			worker.E_temporal._settings.temporal_coherence1_weight = 0.05f;
+			worker.E_temporal._settings.temporal_coherence2_weight = 0.05f;
+		}
 	}
 	if (settings_map.find("perturb_template") != settings_map.end()) {
 		worker.settings->perturb_template = settings_map["perturb_template"];
@@ -87,17 +101,34 @@ int main(int argc, char* argv[]) {
 	bool benchmark, playback, real_color;
 	Worker worker;
 
-	worker.settings->sequence_path = "C:/Projects/Data/Participant9/";
+	worker.settings->sequence_path = "C:/Projects/Data/Fingerspelling/"; // P13 / ";
 	worker.settings->data_path = "C:/Projects/honline/honline-cpp-public/data/";
-	worker.settings->calibrated_model_path = "C:/Data/ModelFits/P09/";
-	worker.settings->sequence_name = "Set1/"; // "PalmOutFingersUp/"; // "experiment/";
+	worker.settings->calibrated_model_path = "C:/Data/ModelFits/P10/";
+	worker.settings->sequence_name = "P10"; // "Set1/"; // "PalmOutFingersUp/"; // "experiment/";
 	worker.settings->logs_path = "C:/Projects/honline/";
 
 	if (argc > 1){
 		cout << "argv[1]: " << argv[1] << endl;
-		std::string pnum(argv[1]);
-		worker.settings->sequence_path = "C:/Projects/Data/Expert" + pnum + "/";
-		worker.settings->calibrated_model_path = "C:/Data/ModelFits/E" + std::string(2 - pnum.length(), '0') + pnum + "/";
+
+		int user_num = (int)std::stof(argv[1]);
+		std::string pnum = "P" + std::string(2 - std::to_string(user_num).length(), '0') + std::to_string(user_num);
+		if (user_num == 6 || user_num == 11 || user_num == 13 || user_num == 14 || user_num == 15 || user_num >= 20){
+			worker.settings->wrist_band_color = YELLOW_BAND;
+		}
+		else{
+			worker.settings->wrist_band_color = BLUE_BAND;
+		}
+		if (user_num == 13 || user_num >= 20){
+			worker.settings->handedness = LEFT_HAND;
+		}
+		else{
+			worker.settings->handedness = RIGHT_HAND;
+		}
+		//worker.settings->sequence_path = "C:/Data/honline_data/guess-who/";
+		worker.settings->sequence_path = "C:/Projects/Data/Fingerspelling/";  //Fingerspelling Mod
+		//worker.settings->calibrated_model_path = "C:/Data/ModelFits/user1/";
+
+		worker.settings->calibrated_model_path = "C:/Data/ModelFits/F" + std::string(2 - std::to_string(user_num).length(), '0') + std::to_string(user_num) + "/"; //Fingerspelling Mod
 		cout << "sequence_path: " << worker.settings->sequence_path << endl;
 		cout << "calibrated_model_path: " << worker.settings->calibrated_model_path << endl;
 	}
@@ -111,7 +142,7 @@ int main(int argc, char* argv[]) {
 		worker.settings->sequence_length = -1;
 		worker.settings->display_estimated_certainty = true;
 		worker.settings->display_measured_certainty = false;
-		worker.settings->downsampling_factor = 2;
+		worker.settings->downsampling_factor = 1; 
 		worker.settings->report_times = false;
 		worker.settings->show_initialization_calls = false;
 		worker.settings->show_iteration_calls = false;
@@ -127,16 +158,16 @@ int main(int argc, char* argv[]) {
 		worker.settings->kalman_filter_type = STANDARD;
 		worker.settings->run_kalman_filter = true;
 		worker.settings->kalman_filter_weight = 10;
-		worker.settings->frames_interval_between_measurements = 20;// 20;
+		worker.settings->frames_interval_between_measurements = 30; // 20;
 
-		worker.settings->run_batch_solver = false;
-		worker.settings->use_online_betas_for_batch_solver = false;
+		worker.settings->run_batch_solver = true; // false;
+		worker.settings->use_online_betas_for_batch_solver = true; // false;
 
 		worker.settings->use_online_beta = false;
 
 		worker.settings->perturb_template = false;
 		worker.settings->perturb_template_std = 0.15;
-		worker.settings->load_calibrated_model = false;
+		worker.settings->load_calibrated_model = false; // true; // false;
 	}
 	/// Evaluation
 	{
@@ -157,7 +188,7 @@ int main(int argc, char* argv[]) {
 	}
 	/// Optimization 	 
 	{
-		worker.settings->termination_max_iters = 7;
+		worker.settings->termination_max_iters = 20; // 7;
 
 		worker.E_fitting.settings->fit2D_outline_enable = true;
 		worker.E_fitting.settings->fit2D_silhouette2outline_enable = false;
@@ -174,7 +205,7 @@ int main(int argc, char* argv[]) {
 		worker.E_limits.jointlimits_enable = true;
 
 		worker.E_pose._settings.enable_split_pca = true;
-		worker.E_pose._settings.weight_proj = 4 * 10e2;
+		worker.E_pose._settings.weight_proj = 1 * 10e1; // 4 * 10e2;
 
 		worker.E_shape._settings.enable_shape_prior = true;
 		worker.E_shape._settings.weight_uniform = 5;
@@ -188,19 +219,19 @@ int main(int argc, char* argv[]) {
 		worker.E_collision._settings.collision_enable = false;
 		worker.E_collision._settings.collision_weight = 1e3;
 
-		worker.E_fingertips._settings.enable_fingertips_prior = true;
+		worker.E_fingertips._settings.enable_fingertips_prior = true;  
 
 		worker.settings->termination_max_rigid_iters = 1;
 
 	}
 
 	{ /// If the application is run externaly
-		/*if (argc > 1) {
+		if (argc > 1) {
 			parse_command_line(argc, argv, worker);
 			worker.settings->run_experiments = false;
 			//worker.settings->sequence_length = 300;
 			benchmark = true;
-		}*/
+		}
 
 		if (worker.settings->dataset_type == TOMPSON || worker.settings->dataset_type == SHARP) worker.settings->downsampling_factor = 1;
 		if (worker.settings->calibration_type == NONE) 	worker.E_fitting.settings->fit2D_weight = 0.4;
@@ -246,7 +277,7 @@ int main(int argc, char* argv[]) {
 	Q_INIT_RESOURCE(shaders);
 	QApplication app(argc, argv);	
 	Camera camera(worker.settings->dataset_type, 60);
-	SensorRealSense sensor(&camera, real_color, worker.settings->downsampling_factor, worker.settings->fit_wrist_separately);
+	SensorRealSense sensor(&camera, real_color, worker.settings->downsampling_factor, worker.settings->fit_wrist_separately, worker.settings->wrist_band_color);
 
 	DataStream datastream(&camera);
 	SolutionStream solutions;

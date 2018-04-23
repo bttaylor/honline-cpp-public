@@ -96,6 +96,17 @@ struct LinearSystem {
 	}
 };
 
+enum Handedness {
+	RIGHT_HAND = 0,
+	LEFT_HAND = 1,
+	BOTH_HANDS = 2,
+};
+
+enum WristBandColor {
+	YELLOW_BAND = 1,
+	BLUE_BAND = 2,
+};
+
 enum CalibrationType {
 	NONE = 0,
 	FINGERS_PARTIAL = 1,

@@ -49,7 +49,7 @@ void Worker::initialize(Camera *camera, GroundTruthLoader * ground_truth_loader,
 	set_calibration_type(this->settings->calibration_type);
 	set_calibration_stage(this->settings->calibration_stage);
 
-	handfinder = new HandFinder(camera, settings->downsampling_factor, settings->fit_wrist_separately);
+	handfinder = new HandFinder(camera, settings->downsampling_factor, settings->fit_wrist_separately, settings->wrist_band_color);
 	ground_truth_loader->model = this->model;
 	ground_truth_loader->camera = this->camera;
 
@@ -203,7 +203,7 @@ void Worker::track(int iter) {
 	system.rhs = VectorN::Zero(model->num_parameters);
 
 	/// Build linear system
-
+	//cout << "b2 ";
 	E_fitting.track(current_frame, system, rigid_only, eval_error, settings->calibrate, tracking_error.push_error, tracking_error.pull_error, tracking_error.weighted_error, iter); 
 
 	//cout << "c ";
@@ -214,7 +214,7 @@ void Worker::track(int iter) {
 			E_shape.shape_dofs_blockers_conditions, E_shape.shape_dofs_blockers_beta_sets, theta, E_pose.fingers_bending_latent_variable);
 	}
 
-	//E_collision.track(system);
+	E_collision.track(system);
 	E_temporal.track(system, current_frame);
 	E_limits.track(system, theta, beta);
 	E_fingertips.track(system, current_frame);	
