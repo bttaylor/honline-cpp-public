@@ -42,3 +42,7 @@ find_package(Qt5Xml REQUIRED)
 include_directories(${Qt5Xml_INCLUDE_DIRS})
 list(APPEND LIBRARIES Qt5::Xml)
 
+#--- Needed for the Android Wear Streaming
+find_package(Qt5Network REQUIRED)
+include_directories(${Qt5Network_INCLUDE_DIRS})
+list(APPEND LIBRARIES Qt5::Network)

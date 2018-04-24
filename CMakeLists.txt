@@ -34,6 +34,7 @@ include(cmake/ConfigureSoftKinetic.cmake)
 include(cmake/ConfigureCUDA.cmake)
 include(cmake/ConfigureAntTweakBar.cmake)
 #include(cmake/ConfigureCeres.cmake)
+include(cmake/ConfigureNanoflann.cmake)
 
 #--- sub-projects
 add_subdirectory(util)
