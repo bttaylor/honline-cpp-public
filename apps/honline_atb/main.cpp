@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
 
 	/// Algorithm 		
 	{
-		benchmark = true;
+		benchmark = false;
 		playback = false;
 		real_color = false;
 		worker.settings->model_path = "";

@@ -44,6 +44,19 @@ QGLWidget(OpenGL32Format()),
 
 	if (worker->settings->show_initialization_calls) cout << "exiting constructor of glwidget" << endl;
 	DebugRenderer::instance().set_data_path(worker->settings->data_path);
+
+	watch = new Watch();
+
+	udpSocket = new QUdpSocket(this);
+	udpSocket->bind(45454, QUdpSocket::ShareAddress);
+	connect(udpSocket, SIGNAL(readyRead()), this, SLOT(processPendingDatagrams()), Qt::QueuedConnection);
+
+	std::cout << "\nGonna send some UDP data" << std::endl;
+	QByteArray Data;
+	Data.append("Hello from UDP GLWidget");
+	QHostAddress addr("192.168.1.12");
+	udpSocket->writeDatagram(Data, addr, 64710);
+
 }
 
 GLWidget::~GLWidget() {
@@ -386,6 +399,7 @@ void GLWidget::keyPressEvent(QKeyEvent *event) {
 	switch (event->key()) {
 
 	case Qt::Key_E: { // E - experiment
+		watch->save_data("C:/Data/");
 		//std::vector<float> beta = worker->model->get_beta(); beta[36] -= 0.5;
 		//worker->model->update_beta(beta);
 		//std::vector<float> theta = std::vector<float>(num_thetas, 0);

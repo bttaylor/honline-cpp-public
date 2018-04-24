@@ -76,7 +76,7 @@ public:
 	int prompt_i = 0;
 	std::vector<std::string> prompts;
 	std::string current_prompt;
-	bool handshape = true;
+	bool handshape = false;
 	int hs_set_num = 1;
 	bool fingerspelling = false; //Fingerspelling Mod
 	bool all_sets_done = false;

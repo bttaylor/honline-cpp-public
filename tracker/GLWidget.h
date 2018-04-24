@@ -1,12 +1,17 @@
 #pragma once
+#include <GL/glew.h>
 #include <QGLWidget>
 #include <QOpenGLWidget>
+#include <QtNetwork\qudpsocket.h>
 #include "tracker/ForwardDeclarations.h"
 #include "tracker/OpenGL/KinectDataRenderer/KinectDataRenderer.h"
 #include "tracker/OpenGL/ConvolutionRenderer/ConvolutionRenderer.h"
+#include "tracker/Watch.h"
+#include <QObject>
 
 //class GLWidget : public QOpenGLWidget {
 class GLWidget : public QGLWidget {
+	Q_OBJECT
 public:
 	Worker * worker;
 	DataStream * const datastream;
@@ -76,4 +81,54 @@ private:
 	std::vector<std::pair<Vector3, Vector3>> GLWidget::prepare_data_correspondences_for_degub_renderer();
 
 	std::vector<std::pair<Vector3, Vector3>> GLWidget::prepare_silhouette_correspondences_for_degub_renderer();
+
+public:
+	Watch* watch;
+	QUdpSocket *udpSocket = nullptr;
+	public slots:
+	void processPendingDatagrams(){
+		std::cout << "Data Pending in GLWidget" << std::endl;
+		QByteArray datagram;
+		while (udpSocket->hasPendingDatagrams()){
+			datagram.resize(int(udpSocket->pendingDatagramSize()));
+			udpSocket->readDatagram(datagram.data(), datagram.size());
+			std::cout << datagram.size() << " Bytes : " << datagram.constData() << std::endl;
+			char* array = datagram.data();
+			String device(array, 8);
+
+			char float_v[4];
+			float x, y, z;
+			float_v[0] = array[23]; float_v[1] = array[22]; float_v[2] = array[21]; float_v[3] = array[20];
+			memcpy(&x, &float_v, sizeof(x));
+			float_v[0] = array[27]; float_v[1] = array[26]; float_v[2] = array[25]; float_v[3] = array[24];
+			memcpy(&y, &float_v, sizeof(y));
+			float_v[0] = array[31]; float_v[1] = array[30]; float_v[2] = array[29]; float_v[3] = array[28];
+			memcpy(&z, &float_v, sizeof(z));
+
+			char int_v[4];
+			int type_num;
+			int_v[0] = array[11]; int_v[1] = array[10]; int_v[2] = array[9]; int_v[3] = array[8];
+			memcpy(&type_num, &int_v, sizeof(type_num));
+
+			char long_v[8];
+			long long time;
+			long_v[0] = array[19]; long_v[1] = array[18]; long_v[2] = array[17]; long_v[3] = array[16];
+			long_v[4] = array[15]; long_v[5] = array[14]; long_v[6] = array[13]; long_v[5] = array[12];
+			memcpy(&time, &long_v, sizeof(time));
+
+
+			if (!watch->check_is_assigned()){
+				watch->set_name(device);
+				std::cout << "Watch Found: " << device << endl;
+				watch->add_instance(x, y, z, time, type_num);
+			}
+			else if(watch->device_name_match(device)){
+				watch->add_instance(x, y, z, time, type_num);
+			}
+			else{
+				std::cout << "Unrecognized Device Data: " << endl;
+				std::cout << type_num << " " << time << " " << x << " " << y << " " << z << " " << device << std::endl;
+			}
+		}
+	};
 };

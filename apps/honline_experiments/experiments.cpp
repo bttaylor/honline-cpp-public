@@ -11,7 +11,7 @@
 #include <chrono>
 #include <random>
 
-std::string path_to_exe = "C:\\Projects\\honline\\build\\honline_atb.exe";
+std::string path_to_exe = "C:\\Projects\\honline_face\\build\\honline_atb.exe";
 std::string source_path = "C:\\Data\\sensor-sequences\\";
 std::string log_path = "C:\\Users\\tkach\\Desktop\\Test\\";
 std::string full_metric_filename = "online_continuous_metrics_exp.txt";
