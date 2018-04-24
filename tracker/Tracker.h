@@ -605,6 +605,7 @@ public:
 			if (!solutions_file.is_open()) solutions_file = ofstream(worker->settings->calibrated_model_path + "set" + std::to_string(hs_set_num) + "/" + current_prompt + "solutions.txt");
 		}
 		else{
+			cout << "In Tracker::write_solutions_and... path: " << worker->settings->calibrated_model_path << current_prompt << "solutions.txt" << endl;
 			if (!solutions_file.is_open()) solutions_file = ofstream(worker->settings->calibrated_model_path + current_prompt + "solutions.txt");
 		}
 		//if (!solutions_file.is_open()) solutions_file = ofstream(sequence_path + "solutions.txt");

@@ -52,7 +52,7 @@ void Watch::save_data(std::string path){
 	outfile.close();
 	cout << "Saved " << accel_buffer.size() << " accel samples." << endl;
 
-	filepath = path + "watch_accel_data.csv";
+	filepath = path + "watch_gyro_data.csv";
 	outfile.open(filepath, std::ofstream::app);
 
 	for (size_t i = 0; i < gyro_buffer.size(); i++) {

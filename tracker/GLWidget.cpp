@@ -400,29 +400,9 @@ void GLWidget::keyPressEvent(QKeyEvent *event) {
 
 	case Qt::Key_E: { // E - experiment
 		watch->save_data("C:/Data/");
-		//std::vector<float> beta = worker->model->get_beta(); beta[36] -= 0.5;
-		//worker->model->update_beta(beta);
-		//std::vector<float> theta = std::vector<float>(num_thetas, 0);
-		//theta[1] = -50; theta[2] = 375;
-		//worker->model->update_theta(theta);
-		//worker->model->update_centers();
 
-		/// Adjust initial transformations
-		/*{ 
-			Mat3f R = worker->model->phalanges[worker->model->phalanges_name_to_id_map["HandThumb1"]].init_local.block(0, 0, 3, 3);
-			Eigen::Vector3f euler_angles = R.eulerAngles(0, 1, 2);
-			euler_angles[2] -= 0.5;
-			cout << euler_angles.transpose() << endl;
-			R = Eigen::AngleAxisf(euler_angles[0], Eigen::Vector3f::UnitX())
-				*Eigen::AngleAxisf(euler_angles[1], Eigen::Vector3f::UnitY())
-				*Eigen::AngleAxisf(euler_angles[2], Eigen::Vector3f::UnitZ());
-			worker->model->phalanges[worker->model->phalanges_name_to_id_map["HandThumb1"]].init_local.block(0, 0, 3, 3) = R;
-		}*/
-
-		/// Perturb parameters
-		/*{
-			worker->model->perturb_parameters(std::chrono::system_clock::now().time_since_epoch().count() % RAND_MAX, worker->settings->uniform_scaling_mean, 0.4, 0.0);
-		}*/
+		ofstream solutions_file = ofstream("C:/Data/watch_test_solutions.txt");		
+		if (solutions_file.is_open()) solutions_file << solutions->frames[datastream->size() - 1].transpose() << endl;
 
 	} break;
 
