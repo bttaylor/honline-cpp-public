@@ -115,6 +115,7 @@ void GLWidget::initializeGL() {
 	glEnable(GL_DEPTH_TEST);
 
 	kinect_renderer.init(camera, worker->settings->dataset_type == SHARP);
+	face_renderer.init(camera, worker->settings->dataset_type == SHARP);
 
 	///--- Initialize other graphic resources
 	this->makeCurrent();
@@ -122,6 +123,7 @@ void GLWidget::initializeGL() {
 
 	///--- Setup with data from worker
 	kinect_renderer.setup(worker->sensor_color_texture->texture_id(), worker->sensor_depth_texture->texture_id());
+	face_renderer.setup(worker->face_texture->texture_id());
 
 	convolution_renderer.projection = camera->view_projection_matrix();
 	convolution_renderer.init(ConvolutionRenderer::NORMAL);
@@ -138,7 +140,32 @@ void GLWidget::paintGL() {
 	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(-1 * this->width() / 2, this->width() / 2, -1 * this->height() / 2, this->height() / 2,-1,1);
+	
+	/*
+	//Test Face Draw
+	glColor3f(1.0, 0.0, 0.0);
+	glBegin(GL_LINE);
+	glVertex2f(-500, -500);
+	glVertex2f(500, 500);
+	glEnd();
+	*/
+
+	//Brandon Facerenderer test
 	Eigen::Matrix4f view_projection = camera->view_projection_matrix() * view;
+	face_renderer.enable_colormap(true);
+	face_renderer.set_zNear(100);
+	face_renderer.set_zFar(1500);
+	face_renderer.set_alpha(1.0);
+	face_renderer.set_uniform("view_projection", view_projection);
+	glDisable(GL_BLEND);
+	face_renderer.render();
+	//end
+	
+	
+	//Eigen::Matrix4f view_projection = camera->view_projection_matrix() * view;
 	kinect_renderer.enable_colormap(true);
 
 	kinect_renderer.set_zNear(100);
@@ -158,6 +185,7 @@ void GLWidget::paintGL() {
 
 	if (display_sensor_data && (convolution_renderer.num_frames_since_calibrated < period * 0.5 || convolution_renderer.num_frames_since_calibrated > 1.5 * period)) kinect_renderer.render();
 	
+
 	glDisable(GL_BLEND);
 
 	if (display_hand_model) convolution_renderer.render(!worker->settings->stop_tracking_without_wristband || worker->handfinder->wristband_found());
@@ -298,6 +326,7 @@ void GLWidget::paintGL() {
 	}
 
 	if (worker->settings->run_batch_solver) worker->batch_solver->display_frames();
+	
 }
 
 void GLWidget::process_mouse_movement(GLfloat cursor_x, GLfloat cursor_y) {

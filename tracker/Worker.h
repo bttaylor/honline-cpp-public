@@ -109,6 +109,9 @@ public:
 	DepthTexture16UC1* sensor_depth_texture = NULL;
 	ColorTexture8UC3* sensor_color_texture = NULL;
 
+
+	DepthTexture16UC1* face_texture = NULL;
+
 	LinearSystem system;
 
 	energy::Fitting E_fitting;

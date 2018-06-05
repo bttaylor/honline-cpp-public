@@ -61,6 +61,8 @@ void Worker::init_graphic_resources() {
 	offscreen_renderer.init(camera, model, data_path, E_fitting.settings->fit2D_silhouette_enable || E_fitting.settings->fit2D_outline_enable || settings->compute_rendered_metrics || settings->write_synthetic_depth);
 	sensor_color_texture = new ColorTexture8UC3(camera->width(), camera->height());
 	sensor_depth_texture = new DepthTexture16UC1(camera->width(), camera->height());
+	face_texture = new DepthTexture16UC1(camera->width(), camera->height());
+	std::cout << "Texture ids. Depth: " << sensor_depth_texture->texture_id() << " face: " << face_texture->texture_id() << endl;
 
 	using namespace energy;
 	trivial_detector = new TrivialDetector(camera, &offscreen_renderer);
@@ -124,6 +126,7 @@ void Worker::init_graphic_resources() {
 void Worker::cleanup_graphic_resources() {
 	delete sensor_color_texture;
 	delete sensor_depth_texture;
+	delete face_texture;
 	E_fitting.cleanup();
 }
 

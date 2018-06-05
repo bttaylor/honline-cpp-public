@@ -6,6 +6,7 @@
 #include "tracker/ForwardDeclarations.h"
 #include "tracker/OpenGL/KinectDataRenderer/KinectDataRenderer.h"
 #include "tracker/OpenGL/ConvolutionRenderer/ConvolutionRenderer.h"
+#include "tracker/OpenGL/FaceRenderer/FaceRenderer.h"
 #include "tracker/Watch.h"
 #include <QObject>
 
@@ -18,6 +19,7 @@ public:
 	SolutionStream * const solutions;
 
 	Camera * const camera;
+	FaceRenderer face_renderer;
 	KinectDataRenderer kinect_renderer;
 	ConvolutionRenderer convolution_renderer;
 

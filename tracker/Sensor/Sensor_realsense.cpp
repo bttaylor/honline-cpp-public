@@ -44,7 +44,6 @@ void SensorRealSense::stop(){}
 #include <mutex>
 #include <condition_variable>
 
-
 using namespace std;
 
 PXCImage::ImageData depth_buffer;
@@ -97,6 +96,7 @@ int SensorRealSense::initialize() {
 		wprintf_s(L"Unable to create the PXCSenseManager\n");
 		return false;
 	}
+	
 	sense_manager->EnableStream(PXCCapture::STREAM_TYPE_COLOR, D_width, D_height, 60);
 	sense_manager->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, D_width, D_height, 60);
 	sense_manager->Init();
@@ -174,9 +174,9 @@ bool SensorRealSense::fetch_streams(DataFrame &frame) {
 	//TICTOC_BLOCK(allocation, "Allocation") 
 	{
 		if (frame.depth.empty())
-			frame.depth = cv::Mat(cv::Size(D_width / 2, D_height / 2), CV_16UC1, cv::Scalar(0));
+			frame.depth = cv::Mat(cv::Size(D_width / downsampling_factor, D_height / downsampling_factor), CV_16UC1, cv::Scalar(0));
 		if (frame.color.empty())
-			frame.color = cv::Mat(cv::Size(D_width / 2, D_height / 2), CV_8UC3, cv::Scalar(0, 0, 0));
+			frame.color = cv::Mat(cv::Size(D_width / downsampling_factor, D_height / downsampling_factor), CV_8UC3, cv::Scalar(0, 0, 0));
 
 		if (sense_manager->AcquireFrame(true) < PXC_STATUS_NO_ERROR) return false;
 		return true;
@@ -188,8 +188,8 @@ bool SensorRealSense::fetch_streams(DataFrame &frame) {
 		sample->depth->AcquireAccess(PXCImage::ACCESS_READ_WRITE, PXCImage::PIXEL_FORMAT_DEPTH, &depth_buffer);
 		unsigned short* data = ((unsigned short *)depth_buffer.planes[0]);
 		
-		for (int y = 0, y_sub = 0; y_sub < camera->height(); y += 2, y_sub++) {
-			for (int x = 0, x_sub = 0; x_sub < camera->width(); x += 2, x_sub++) {
+		for (int y = 0, y_sub = 0; y_sub < camera->height(); y += downsampling_factor, y_sub++) {
+			for (int x = 0, x_sub = 0; x_sub < camera->width(); x += downsampling_factor, x_sub++) {
 				frame.depth.at<unsigned short>(y_sub, x_sub) = data[y*D_width + (D_width - x - 1)];
 			}
 		}
@@ -203,8 +203,8 @@ bool SensorRealSense::fetch_streams(DataFrame &frame) {
 	{
 		PXCImage * sync_color_pxc = projection->CreateColorImageMappedToDepth(sample->depth, sample->color);
 		sync_color_pxc->AcquireAccess(PXCImage::ACCESS_READ_WRITE, PXCImage::PIXEL_FORMAT_RGB24, &color_buffer);
-		for (int y = 0, y_sub = 0; y_sub < camera->height(); y += 2, y_sub++) {
-			for (int x = 0, x_sub = 0; x_sub < camera->width(); x += 2, x_sub++) {
+		for (int y = 0, y_sub = 0; y_sub < camera->height(); y += downsampling_factor, y_sub++) {
+			for (int x = 0, x_sub = 0; x_sub < camera->width(); x += downsampling_factor, x_sub++) {
 				unsigned char r = color_buffer.planes[0][y * D_width * 3 + (D_width - x - 1) * 3 + 0];
 				unsigned char g = color_buffer.planes[0][y * D_width * 3 + (D_width - x - 1) * 3 + 1];
 				unsigned char b = color_buffer.planes[0][y * D_width * 3 + (D_width - x - 1) * 3 + 2];
@@ -257,14 +257,14 @@ bool SensorRealSense::run() {
 			if (sensor_indicator_buffer.empty()) 
 				sensor_indicator_buffer = std::vector<int>(upper_bound_num_sensor_points, 0);
 			if (depth_array[FRONT_BUFFER].empty()) {
-				depth_array[FRONT_BUFFER] = cv::Mat(cv::Size(D_width / 2, D_height / 2), CV_16UC1, cv::Scalar(0));
+				depth_array[FRONT_BUFFER] = cv::Mat(cv::Size(D_width / downsampling_factor, D_height / downsampling_factor), CV_16UC1, cv::Scalar(0));
 			}
 			if (depth_array[BACK_BUFFER].empty())
-				depth_array[BACK_BUFFER] = cv::Mat(cv::Size(D_width / 2, D_height / 2), CV_16UC1, cv::Scalar(0));
+				depth_array[BACK_BUFFER] = cv::Mat(cv::Size(D_width / downsampling_factor, D_height / downsampling_factor), CV_16UC1, cv::Scalar(0));
 			if (color_array[FRONT_BUFFER].empty())
-				color_array[FRONT_BUFFER] = cv::Mat(cv::Size(D_width / 2, D_height / 2), CV_8UC3, cv::Scalar(0, 0, 0));
+				color_array[FRONT_BUFFER] = cv::Mat(cv::Size(D_width / downsampling_factor, D_height / downsampling_factor), CV_8UC3, cv::Scalar(0, 0, 0));
 			if (color_array[BACK_BUFFER].empty())
-				color_array[BACK_BUFFER] = cv::Mat(cv::Size(D_width / 2, D_height / 2), CV_8UC3, cv::Scalar(0, 0, 0));
+				color_array[BACK_BUFFER] = cv::Mat(cv::Size(D_width / downsampling_factor, D_height / downsampling_factor), CV_8UC3, cv::Scalar(0, 0, 0));
 			if (real_color) {
 				if (full_color_array[FRONT_BUFFER].empty())
 					full_color_array[FRONT_BUFFER] = cv::Mat(cv::Size(D_width, D_height), CV_8UC3, cv::Scalar(0, 0, 0));
@@ -274,14 +274,17 @@ bool SensorRealSense::run() {
 
 			if (sense_manager->AcquireFrame(true) < PXC_STATUS_NO_ERROR) continue;
 		}
-
 		sample = sense_manager->QuerySample();
 
 		sample->depth->AcquireAccess(PXCImage::ACCESS_READ_WRITE, PXCImage::PIXEL_FORMAT_DEPTH, &depth_buffer);
 		unsigned short* data = ((unsigned short *)depth_buffer.planes[0]);
-		for (int y = 0, y_sub = 0; y_sub < camera->height(); y += 2, y_sub++) {
-			for (int x = 0, x_sub = 0; x_sub < camera->width(); x += 2, x_sub++) {
-				if (x == 0 || y == 0) {
+		for (int y = 0, y_sub = 0; y_sub < camera->height(); y += downsampling_factor, y_sub++) {
+			for (int x = 0, x_sub = 0; x_sub < camera->width(); x += downsampling_factor, x_sub++) {
+				if (x == 0 || y == 0 ) {
+					depth_array[BACK_BUFFER].at<unsigned short>(y_sub, x_sub) = data[y*D_width + (D_width - x - 1)];
+					continue;
+				}
+				if (x == camera->width() || y == camera->height()){
 					depth_array[BACK_BUFFER].at<unsigned short>(y_sub, x_sub) = data[y*D_width + (D_width - x - 1)];
 					continue;
 				}
@@ -320,8 +323,8 @@ bool SensorRealSense::run() {
 		
 		sync_color_pxc = projection->CreateColorImageMappedToDepth(sample->depth, sample->color);
 		sync_color_pxc->AcquireAccess(PXCImage::ACCESS_READ_WRITE, PXCImage::PIXEL_FORMAT_RGB24, &color_buffer);
-		for (int y = 0, y_sub = 0; y_sub < camera->height(); y += 2, y_sub++) {
-			for (int x = 0, x_sub = 0; x_sub < camera->width(); x += 2, x_sub++) {
+		for (int y = 0, y_sub = 0; y_sub < camera->height(); y += downsampling_factor, y_sub++) {
+			for (int x = 0, x_sub = 0; x_sub < camera->width(); x += downsampling_factor, x_sub++) {
 				unsigned char r = color_buffer.planes[0][y * D_width * 3 + (D_width - x - 1) * 3 + 0];
 				unsigned char g = color_buffer.planes[0][y * D_width * 3 + (D_width - x - 1) * 3 + 1];
 				unsigned char b = color_buffer.planes[0][y * D_width * 3 + (D_width - x - 1) * 3 + 2];

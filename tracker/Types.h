@@ -37,7 +37,7 @@ const int num_phalanges = 17;
 
 const int num_betas_latent = 5;
 
-const int upper_bound_num_sensor_points = 76800;
+const int upper_bound_num_sensor_points = 307200; // 76800;
 const int upper_bound_num_rendered_outline_points = 5000;
 const int upper_bound_num_rendered_silhouette_points = 5000;
 

@@ -38,6 +38,9 @@
 
 #include "GLWidget.h"
 
+#include <FaceTracker/Tracker.h>
+
+
 class Tracker : public QTimer {
 public:
 	Mode mode = LIVE;
@@ -61,7 +64,7 @@ public:
 
 	bool tracking_failed = false;
 	bool initialization_enabled = true;
-	bool tracking_enabled = true;
+	bool tracking_enabled = false;
 
 	int sequence_length;
 
@@ -69,6 +72,12 @@ public:
 	GLWidget * glwidget;
 
 	//Brandon Mods
+	std::vector<std::vector<double>> faceShapes;
+	FACETRACKER::Tracker faceModel;
+	cv::Mat tri;
+	cv::Mat con;
+	bool showFaceTrack = true;
+
 	bool last_was_pause = false;
 	int reset_frame = -101;
 	int user_num;
@@ -83,7 +92,8 @@ public:
 	int set_frame = 54;
 
 
-	Tracker(Worker*worker, GLWidget * glwidget, double FPS, std::string sequence_path, bool real_color) : worker(worker), glwidget(glwidget), synthetic_dataset_generator(worker, sequence_path){
+	Tracker(Worker*worker, GLWidget * glwidget, double FPS, std::string sequence_path, bool real_color) : worker(worker), glwidget(glwidget), synthetic_dataset_generator(worker, sequence_path),
+		faceModel("C:/Developer/FaceTracker-opencv2/model/face2.tracker"){
 		setSingleShot(false);
 		setInterval((1.0 / FPS)*1000.0);
 		this->sequence_path = sequence_path;
@@ -119,6 +129,18 @@ public:
 			}
 		}
 
+		//FaceTracker
+
+		if (showFaceTrack) {
+			cvNamedWindow("Face Tracker", 1);
+			worker->glarea->activateWindow();
+			//worker->set_focus();
+		}
+
+		tri = FACETRACKER::IO::LoadTri("C:/Developer/FaceTracker-opencv2/model/face.tri");
+		con = FACETRACKER::IO::LoadCon("C:/Developer/FaceTracker-opencv2/model/face.con");
+
+		faceShapes = std::vector<std::vector<double>>();
 	}
 
 	void toggle_tracking(bool on) {
@@ -145,6 +167,7 @@ private:
 	void timerEvent(QTimerEvent*) {
 		process_track();
 		//compute_initial_transformations();
+		process_face();
 	}
 
 public:
@@ -191,6 +214,25 @@ public:
 
 		//cout << "2" << endl;
 		//Brandon
+		if (worker->current_frame.id == 50){
+			cout << "Write faces triggered" << endl;
+			std::ofstream outfile;
+			
+			std::string filepath = "C:/Data/Faces.csv";
+			outfile.open(filepath, std::ofstream::app);
+
+			for (size_t i = 0; i < faceShapes.size(); i++) {
+				std::vector<double> points = faceShapes.at(i);
+				int n = points.size();
+				for (int j = 0; j < n; ++j){
+					outfile << points.at(j) << ", " ;
+				}
+				outfile << endl;
+				
+			}
+			outfile.close();
+			
+		}
 		if (set_frame == reset_frame + 31){
 
 			//std::cout << "Enabling calibration. Setting termination _max_iters to 15." << endl;
@@ -213,7 +255,7 @@ public:
 
 		{ /// Fetching sensor data
 			if (mode == LIVE) {
-				sensor->fetch_streams_concurrently(worker->current_frame, *worker->handfinder, worker->model->real_color);
+				sensor->fetch_streams_concurrently(worker->current_frame, *worker->handfinder, worker->current_frame.full_color);
 			}
 			if (mode == BENCHMARK) {
 				load_recorded_frame();
@@ -225,10 +267,28 @@ public:
 			sensor_fetching_time = std::clock() - tracking_start_time; if (worker->settings->report_times) std::cout << "fetching = " << sensor_fetching_time - frame_start_time << endl;
 		}
 
+		/*
+		cv::Mat dummy_region = worker->current_frame.depth.clone();
+		dummy_region = dummy_region(cv::Range(0, dummy_region.rows / 2), cv::Range(0, dummy_region.cols));
+		//cv::Mat dummy_region = worker->current_frame.depth(cv::Range(51, 60), cv::Range(51, 60));
+		//cout << "dummy region: " <<  endl;
+		unsigned short min_v = 9999;
+		unsigned short max_v = 0;
+		for (int i = 0; i < dummy_region.cols; i++){
+			for (int j = 0; j < dummy_region.rows; j++){
+				if (j > dummy_region.rows / 2) dummy_region.at<DepthPixel>(j, i) = 0;
+				unsigned short val = dummy_region.at<DepthPixel>(j, i);
+				if (val < min_v) min_v = val;
+				if (val > max_v) max_v = val;
+			}
+		}
+		cout << "dummy region: height: " << dummy_region.rows << endl;
+	//	worker->face_texture->load(dummy_region.data, worker->current_frame.id);
+		*/
 		{ /// Processing sensor data
 			if (worker->settings->stop_tracking_without_wristband && !worker->handfinder->wristband_found()) {
-				datastream->add_frame(worker->current_frame.color.data, worker->current_frame.depth.data, worker->model->real_color.data);
-				worker->sensor_depth_texture->load(worker->current_frame.depth.data, worker->current_frame.id);
+				datastream->add_frame(worker->current_frame.color.data, worker->current_frame.depth.data, worker->current_frame.full_color.data);
+				worker->sensor_depth_texture->load(worker->current_frame.depth.data, worker->current_frame.id);				
 				write_solutions_and_tracking_metrics();
 				worker->offscreen_renderer.render_offscreen(true, false, false); worker->updateGL();
 				worker->current_frame.id++;
@@ -247,7 +307,7 @@ public:
 			if (worker->E_fitting.settings->fit2D_outline_enable) compute_data_outline();
 
 			//cout << "7" << endl;
-			datastream->add_frame(worker->current_frame.color.data, worker->current_frame.depth.data, worker->model->real_color.data);
+			datastream->add_frame(worker->current_frame.color.data, worker->current_frame.depth.data, worker->current_frame.full_color.data);
 			worker->sensor_depth_texture->load(worker->current_frame.depth.data, worker->current_frame.id);
 
 			sensor_processing_time = std::clock() - tracking_start_time; if (worker->settings->report_times) std::cout << "processing = " << sensor_processing_time - sensor_fetching_time << endl;
@@ -863,9 +923,9 @@ public:
 		cv::normalize(normalized_depth, normalized_depth, 127, 255, cv::NORM_MINMAX, CV_8UC1);
 		cv::resize(normalized_depth, normalized_depth, cv::Size(2 * normalized_depth.cols, 2 * normalized_depth.rows), cv::INTER_CUBIC);//resize image
 		cv::moveWindow("DEPTH", 592, 855); cv::imshow("DEPTH", normalized_depth);*/
-
-		if (glwidget->display_model_outline) {
-			cv::Mat real_color; cv::flip(worker->model->real_color, real_color, 0);
+		if (true){
+		//if (glwidget->display_model_outline) {
+			cv::Mat real_color = worker->current_frame.full_color; //cv::flip(worker->current_frame.full_color, real_color, 0);
 			//cv::namedWindow("RGB");	cv::moveWindow("RGB", 592, 375); 
 			cv::imshow("RGB", real_color);
 		}
@@ -1334,6 +1394,153 @@ public:
 		tracking_metrics_file.close();
 		weighted_metrics_file.close();
 	}
+
+
+
+	void process_face(){
+		cv::Mat im, gray,frame;
+		if (real_color)
+			frame = worker->current_frame.full_color;
+			//frame = worker->current_frame.color;
+		else
+			frame = worker->current_frame.color;
+		float scale = 1;
+		int64 t1, t0 = cvGetTickCount(); int fnum = 0;
+		double fps = 0;
+		char sss[256]; std::string text;
+		//bool showFaceTrack = true;
+		std::vector<int> wSize1(1); wSize1[0] = 7;
+		std::vector<int> wSize2(3); wSize2[0] = 11; wSize2[1] = 9; wSize2[2] = 7;
+		int nIter = 5; double clamp = 3, fTol = 0.01;
+		bool failed = true;
+		int fpd = -1;
+		bool fcheck = false;
+
+		//IplImage* I = cvQueryFrame(worker->camera); if (!I)continue; frame = I;
+		if (scale == 1)im = frame;
+		else cv::resize(frame, im, cv::Size(scale*frame.cols, scale*frame.rows));
+		cv::flip(im, im, 1);
+		cv::cvtColor(im, gray, CV_BGR2GRAY);
+
+		//track this image
+
+		std::vector<int> wSize;
+		if (failed)
+			wSize = wSize2;
+		else
+			wSize = wSize1;
+		if (faceModel.Track(gray, wSize, fpd, nIter, clamp, fTol, fcheck) == 0){
+			int idx = faceModel._clm.GetViewIdx(); failed = false;
+			DrawFaceTracker(im, faceModel._shape, con, tri, faceModel._clm._visi[idx]);
+			FacePointsForRenderer(im, faceModel._shape, faceModel._clm._visi[idx]);
+		}
+		else{
+			if (showFaceTrack){
+				cv::Mat R(im, cvRect(0, 0, 150, 50));
+				R = cv::Scalar(0, 0, 255);
+			}
+			faceModel.FrameReset(); failed = true;
+		}
+
+
+		//draw framerate on display image 
+		if (fnum >= 9){
+			t1 = cvGetTickCount();
+			fps = 10.0 / ((double(t1 - t0) / cvGetTickFrequency()) / 1e+6);
+			t0 = t1; fnum = 0;
+		}
+		else fnum += 1;
+		if (showFaceTrack) {
+			sprintf(sss, "%d frames/sec", (int)round(fps)); text = sss;
+			cv::putText(im, text, cv::Point(10, 20),
+				CV_FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255, 255, 255));
+			//std::cout << text << " im.w: " << im.cols << " im.r: " << im.rows << std::endl;
+
+			imshow("Face Tracker", im);
+		}
+		//int c = cvWaitKey(10);
+		//if (c == 27)break; else if (char(c) == 'd')model.FrameReset();
+		
+	}
+
+	void FacePointsForRenderer(cv::Mat &image, cv::Mat &shape, cv::Mat &visi){
+		cv::Mat facepass = cv::Mat::zeros(image.rows, image.cols, CV_16UC1);
+		int n = shape.rows / 2;
+		cv::Point p1;
+		//draw points
+		std::vector<double> points = std::vector<double>(n * 2);
+		for (int i = 0; i < n; i++){
+			if (visi.at<int>(i, 0) == 0){
+				points.push_back(-1);
+				points.push_back(-1);
+				continue;
+			}
+			points.push_back(shape.at<double>(i, 0));
+			points.push_back(shape.at<double>(i + n, 0));
+			p1 = cv::Point(image.cols - shape.at<double>(i, 0), shape.at<double>(i + n, 0));
+			facepass.at<DepthPixel>(p1) = 500;
+		}
+		worker->face_texture->load(facepass.data, worker->current_frame.id);
+	}
+
+	void DrawFaceTracker(cv::Mat &image, cv::Mat &shape, cv::Mat &con, cv::Mat &tri, cv::Mat &visi)
+	{
+		int i, n = shape.rows / 2; cv::Point p1, p2; cv::Scalar c;
+		//cout << "N = " << n << " Face points" << endl;
+		//draw triangulation
+		c = CV_RGB(0, 0, 0);
+		for (i = 0; i < tri.rows; i++){
+			if (visi.at<int>(tri.at<int>(i, 0), 0) == 0 ||
+				visi.at<int>(tri.at<int>(i, 1), 0) == 0 ||
+				visi.at<int>(tri.at<int>(i, 2), 0) == 0)continue;
+			p1 = cv::Point(shape.at<double>(tri.at<int>(i, 0), 0),
+				shape.at<double>(tri.at<int>(i, 0) + n, 0));
+			p2 = cv::Point(shape.at<double>(tri.at<int>(i, 1), 0),
+				shape.at<double>(tri.at<int>(i, 1) + n, 0));
+			cv::line(image, p1, p2, c);
+			p1 = cv::Point(shape.at<double>(tri.at<int>(i, 0), 0),
+				shape.at<double>(tri.at<int>(i, 0) + n, 0));
+			p2 = cv::Point(shape.at<double>(tri.at<int>(i, 2), 0),
+				shape.at<double>(tri.at<int>(i, 2) + n, 0));
+			cv::line(image, p1, p2, c);
+			p1 = cv::Point(shape.at<double>(tri.at<int>(i, 2), 0),
+				shape.at<double>(tri.at<int>(i, 2) + n, 0));
+			p2 = cv::Point(shape.at<double>(tri.at<int>(i, 1), 0),
+				shape.at<double>(tri.at<int>(i, 1) + n, 0));
+			cv::line(image, p1, p2, c);
+		}
+		//draw connections
+		c = CV_RGB(0, 0, 255);
+		for (i = 0; i < con.cols; i++){
+			if (visi.at<int>(con.at<int>(0, i), 0) == 0 ||
+				visi.at<int>(con.at<int>(1, i), 0) == 0)continue;
+			p1 = cv::Point(shape.at<double>(con.at<int>(0, i), 0),
+				shape.at<double>(con.at<int>(0, i) + n, 0));
+			p2 = cv::Point(shape.at<double>(con.at<int>(1, i), 0),
+				shape.at<double>(con.at<int>(1, i) + n, 0));
+			cv::line(image, p1, p2, c, 1);
+		}
+		//draw points
+		std::vector<double> points = std::vector<double>(n * 2);
+		for (i = 0; i < n; i++){
+			if (visi.at<int>(i, 0) == 0){
+				points.push_back(-1);
+				points.push_back(-1);
+				continue;
+			}
+			points.push_back(shape.at<double>(i, 0));
+			points.push_back(shape.at<double>(i + n, 0));
+			p1 = cv::Point(shape.at<double>(i, 0), shape.at<double>(i + n, 0));
+			p2 = cv::Point(image.cols - shape.at<double>(i, 0), shape.at<double>(i + n, 0));
+			c = CV_RGB(255, 0, 0); cv::circle(image, p1, 2, c);
+			//facepass.at<DepthPixel>(p2) = 500;
+		}
+		faceShapes.push_back(points);
+
+		//worker->face_texture->load(facepass.data, worker->current_frame.id);
+		return;
+	}
+
 
 };
 

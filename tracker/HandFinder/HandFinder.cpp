@@ -20,7 +20,7 @@ HandFinder::HandFinder(Camera *camera, int downsampling_factor, bool fit_wrist_s
 	settings->fit_wrist_separately = fit_wrist_separately;
 	settings->downsampling_factor = downsampling_factor;
 
-	sensor_indicator = new int[upper_bound_num_sensor_points];
+	sensor_indicator = new int[upper_bound_num_sensor_points]; 
 
 	settings->hsv_min[0] = 94;  //Blue = 94, yellow = 14
 	settings->hsv_min[1] = 111;
@@ -105,7 +105,6 @@ void HandFinder::binary_classification_wrist(const cv::Mat & depth) {
 
 void HandFinder::binary_classification(cv::Mat& depth, cv::Mat& color) {    
     _wristband_found = false;
-
     TIMED_SCOPE(timer, "Worker::binary_classification");
 
     /// Fetch from settings

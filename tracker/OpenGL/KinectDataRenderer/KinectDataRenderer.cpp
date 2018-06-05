@@ -156,7 +156,7 @@ void KinectDataRenderer::setup(GLuint texture_id_color, GLuint texture_id_depth)
 
 void KinectDataRenderer::render() {
 
-	if (texture_id_depth == 0) return;
+	if (texture_id_depth == 0) return;	
 
 	if (alpha < 1.0) {
 		glEnable(GL_BLEND);

@@ -101,10 +101,10 @@ int main(int argc, char* argv[]) {
 	bool benchmark, playback, real_color;
 	Worker worker;
 
-	worker.settings->sequence_path = "C:/Projects/Data/Fingerspelling/"; // P13 / ";
+	worker.settings->sequence_path = "C:/Data/FaceTracking/"; // P13 / ";
 	worker.settings->data_path = "C:/Projects/honline/honline-cpp-public/data/";
-	worker.settings->calibrated_model_path = "C:/Data/ModelFits/P10/";
-	worker.settings->sequence_name = "P10"; // "Set1/"; // "PalmOutFingersUp/"; // "experiment/";
+	worker.settings->calibrated_model_path = "C:/Data/FaceTracking/ModelFits/T01/";
+	worker.settings->sequence_name = "T01"; // "Set1/"; // "PalmOutFingersUp/"; // "experiment/";
 	worker.settings->logs_path = "C:/Projects/honline/";
 
 	if (argc > 1){
@@ -137,12 +137,12 @@ int main(int argc, char* argv[]) {
 	{
 		benchmark = false;
 		playback = false;
-		real_color = false;
+		real_color = false; // false;
 		worker.settings->model_path = "";
 		worker.settings->sequence_length = -1;
 		worker.settings->display_estimated_certainty = true;
 		worker.settings->display_measured_certainty = false;
-		worker.settings->downsampling_factor = 1; 
+		worker.settings->downsampling_factor = 2; 
 		worker.settings->report_times = false;
 		worker.settings->show_initialization_calls = false;
 		worker.settings->show_iteration_calls = false;
@@ -160,8 +160,8 @@ int main(int argc, char* argv[]) {
 		worker.settings->kalman_filter_weight = 10;
 		worker.settings->frames_interval_between_measurements = 30; // 20;
 
-		worker.settings->run_batch_solver = true; // false;
-		worker.settings->use_online_betas_for_batch_solver = true; // false;
+		worker.settings->run_batch_solver = false; // false;
+		worker.settings->use_online_betas_for_batch_solver = false; // false;
 
 		worker.settings->use_online_beta = false;
 
